@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "D3D11 Game", "D3D11 Game\D3D11 Game.vcxproj", "{ECA6F97A-58DB-4446-8473-FA6774DDB794}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "techniqueGen", "techniqueGen\techniqueGen.vcxproj", "{4E40F12E-5CD6-4743-9CDB-DC44FAD35E81}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TextureDDSConverter", "TextureDDSConverter\TextureDDSConverter.vcxproj", "{53833F28-81A9-49A8-8AFA-1C05F9E69BDF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ECA6F97A-58DB-4446-8473-FA6774DDB794}.Debug|Win32.ActiveCfg = Debug|Win32
+		{ECA6F97A-58DB-4446-8473-FA6774DDB794}.Debug|Win32.Build.0 = Debug|Win32
+		{ECA6F97A-58DB-4446-8473-FA6774DDB794}.Release|Win32.ActiveCfg = Release|Win32
+		{ECA6F97A-58DB-4446-8473-FA6774DDB794}.Release|Win32.Build.0 = Release|Win32
+		{4E40F12E-5CD6-4743-9CDB-DC44FAD35E81}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4E40F12E-5CD6-4743-9CDB-DC44FAD35E81}.Debug|Win32.Build.0 = Debug|Win32
+		{4E40F12E-5CD6-4743-9CDB-DC44FAD35E81}.Release|Win32.ActiveCfg = Release|Win32
+		{4E40F12E-5CD6-4743-9CDB-DC44FAD35E81}.Release|Win32.Build.0 = Release|Win32
+		{53833F28-81A9-49A8-8AFA-1C05F9E69BDF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{53833F28-81A9-49A8-8AFA-1C05F9E69BDF}.Debug|Win32.Build.0 = Debug|Win32
+		{53833F28-81A9-49A8-8AFA-1C05F9E69BDF}.Release|Win32.ActiveCfg = Release|Win32
+		{53833F28-81A9-49A8-8AFA-1C05F9E69BDF}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
