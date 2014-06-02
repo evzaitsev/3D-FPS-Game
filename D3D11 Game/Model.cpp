@@ -314,13 +314,15 @@ void Model::LoadTextures(aiMaterial* Mat, bool& AOMap, bool NormalMap, bool& Spe
 	OutputDebugStringA(SpecularMapTexturePath.c_str());
 	OutputDebugStringA("\n");
 
-	if (!FileExists(SpecularMapTexturePath))
+
+
+	if (SpecularMap && !FileExists(SpecularMapTexturePath))
 		ShowError(SpecularMapTexturePath.c_str());
 
-	if (!FileExists(AmbientOcclusionMapTexturePath))
+	if (AOMap && !FileExists(AmbientOcclusionMapTexturePath))
 		ShowError(AmbientOcclusionMapTexturePath.c_str());
 
-	if (!FileExists(NormalMapTexturePath))
+	if (NormalMap && !FileExists(NormalMapTexturePath))
 		ShowError(NormalMapTexturePath.c_str());
 #endif
 

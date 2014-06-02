@@ -186,7 +186,7 @@ void Direct3D::InitPhysics()
 
 
       m_fallMotionState =
-                new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(10,1000,0)));
+                new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(30,1000,0)));
 
 	  //average weight of a person = 65 kg
       btScalar mass = 65.0f;
@@ -549,7 +549,7 @@ void Direct3D::OnResize()
 
 	pDeviceContext->RSSetViewports(1, &m_ViewPort);
 
-	m_Cam.SetLens(0.25f * MathHelper::Pi, (FLOAT)m_Width/(FLOAT)m_Height, 1.0f, 30000.0f);
+	m_Cam.SetLens(0.25f * MathHelper::Pi, (FLOAT)m_Width/(FLOAT)m_Height, 0.1f, 30000.0f);
 
 	XNA::ComputeFrustumFromProjection(&m_Frustum, &m_Cam.Proj());
 
@@ -632,7 +632,7 @@ void Direct3D::UpdateScene(float dt)
 	if( GetAsyncKeyState('D') & 0x8000 )
 		m_Cam.Strafe(10.0f * dt * speed);
 
-	m_Cam.SetPosition(trans.getOrigin().getX(), trans.getOrigin().getY() + 6.0f, trans.getOrigin().getZ());
+	m_Cam.SetPosition(trans.getOrigin().getX(), trans.getOrigin().getY() + 12.0f, trans.getOrigin().getZ());
 
 
 #ifdef USE_FREE_CAMERA_KEY
@@ -932,7 +932,6 @@ void Direct3D::DrawScene()
 
 	DrawModels(false);
 
-	m_AK47->Render();
 
 
 #ifdef _USE_DEFERRED_SHADING_
@@ -965,6 +964,11 @@ void Direct3D::DrawScene()
 	}
 
 #endif
+
+	
+	pDeviceContext->ClearDepthStencilView(m_DepthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+	m_AK47->Render();
 
 	ID3D11ShaderResourceView* nullSRV[16] = { 0 };
 	pDeviceContext->PSSetShaderResources(0, 16, nullSRV);
