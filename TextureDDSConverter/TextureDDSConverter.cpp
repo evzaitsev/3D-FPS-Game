@@ -1,5 +1,6 @@
 // TextureDDSConverter.cpp : Reads input as texture file paths and converts them to compressed .dds formats
 // Reqiures texconv.exe which comes with directx sdk in the folder of .exe 
+//Not finished
 
 #include "stdafx.h"
 #include <iostream>
