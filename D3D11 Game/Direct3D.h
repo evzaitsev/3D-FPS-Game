@@ -35,8 +35,6 @@ private:
 	Model* m_Sponza;
 	Weapon* m_AK47;
 
-	int* indices;
-
 	ID3D11Buffer* mScreenQuadVB;
 	ID3D11Buffer* mScreenQuadIB;
 

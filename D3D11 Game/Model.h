@@ -1,10 +1,6 @@
 #ifndef _MODEL_H_
 #define _MODEL_H_
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-
 
 
 struct InstancedData
@@ -160,11 +156,16 @@ public:
 
 	std::vector<InstancedData> mInstancedData;
 	std::vector<XMFLOAT3> vertices;
-	std::vector<UINT> Indices;
 	std::vector<XNA::AxisAlignedBox> AABB;
+
+	//for bullet physics
+	//can delete whenever not required to save memory
+	int* Indices;
 public:
+	//Bullet physics requires you to feed indices to it
+	//Set FillIndices to true if you need Indices or false if you don't
 	Model(const std::string& filename, 
-		InitInfo& info, bool Use32bitFormat, bool NormalMapped, bool HasAOMap, bool HasSpecularMap);
+		InitInfo& info, bool Use32bitFormat, bool NormalMapped, bool HasAOMap, bool HasSpecularMap, bool FillIndices);
 	~Model();
 
 	void Render(CXMMATRIX World, CXMMATRIX ViewProj);
@@ -202,10 +203,10 @@ private:
 	Model(const Model& rhs);
 	Model& operator=(const Model& rhs);
 
-    void LoadBasicModel16(const std::string& filename, bool AOMap, bool SpecularMap);
-	void LoadBasicModel32(const std::string& filename, bool AOMap, bool SpecularMap);
-	void LoadNormalMapModel16(const std::string& filename, bool AOMap, bool SpecularMap);
-	void LoadNormalMapModel32(const std::string& filename, bool AOMap, bool SpecularMap);
+    void LoadBasicModel16(const std::string& filename, bool &AOMap, bool &SpecularMap, bool &FillIndices);
+	void LoadBasicModel32(const std::string& filename, bool &AOMap, bool &SpecularMap, bool &FillIndices);
+	void LoadNormalMapModel16(const std::string& filename, bool &AOMap, bool &SpecularMap, bool &FillIndices);
+	void LoadNormalMapModel32(const std::string& filename, bool &AOMap, bool &SpecularMap, bool &FillIndices);
 
 	void LoadTextures(aiMaterial* mat, bool& AOMap, bool NormalMaps, bool& SpecularMap);
 	void LoadMaterials(aiMaterial* mat);

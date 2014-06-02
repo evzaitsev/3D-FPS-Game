@@ -35,7 +35,10 @@
 #include <list>
 #include <stdio.h>
 #include <Gdiplus.h>
-
+#include <map>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 // TODO: reference additional headers your program requires here
 
@@ -66,4 +69,6 @@
 #include "Map.h"
 #include "gBuffers.h"
 #include "WeaponRenderer.h"
+#include "SkinnedData.h"
+#include "SkinnedModel.h"
 #include "Direct3D.h"

@@ -330,10 +330,8 @@ NormalMapEffect::NormalMapEffect(ID3D11Device* device, const std::wstring& filen
     Light3PointLight3TexAOTech = mFX->GetTechniqueByName("Light3PointLight3TexAO");
     Light3PointLight3TexAOSpecTech = mFX->GetTechniqueByName("Light3PointLight3TexAOSpec");
 
-
-
-   Light0PointLight0InstancedTech = mFX->GetTechniqueByName("Light0PointLight0Instanced");
-
+    Light0PointLight0InstancedTech = mFX->GetTechniqueByName("Light0PointLight0Instanced");
+    Light1TexSkinnedTech = mFX->GetTechniqueByName("Light1TexSkinned");
 
 	WorldViewProj     = mFX->GetVariableByName("gWorldViewProj")->AsMatrix();
 	ViewProj          = mFX->GetVariableByName("gViewProj")->AsMatrix();

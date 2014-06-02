@@ -508,6 +508,7 @@ public:
     ID3DX11EffectTechnique* Light3PointLight3TexSpecTech;
     ID3DX11EffectTechnique* Light3PointLight3TexAOTech;
     ID3DX11EffectTechnique* Light3PointLight3TexAOSpecTech;
+	ID3DX11EffectTechnique* Light1TexSkinnedTech;
 
 
 	ID3DX11EffectTechnique* Light0PointLight0InstancedTech;

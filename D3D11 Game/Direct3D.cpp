@@ -5,7 +5,7 @@
 //A free 3D game under construction by newtechnology
 //Current Status: SSAO delayed until deferred shading is implemented
 //Credits: Huge thanks to Frank D. Luna for his awesome book and gamedev.net
-//Current goal: building a map and some data structure for rendering large number of objects
+//Current goal: Adding skinned model loading and rendering support + physics and collision
 //==================================================
 
 ID3D11Device* pDevice = 0;
@@ -116,7 +116,6 @@ Direct3D::~Direct3D()
 
 	SafeDelete(m_Sponza);
 
-	SafeDelete(indices);
 	SafeDelete(m_indexVertexArrays);
 
 	m_dynamicsWorld->removeRigidBody(m_fallRigidBody);
@@ -160,15 +159,9 @@ void Direct3D::InitPhysics()
       m_dynamicsWorld->setGravity(btVector3(0, -9.8f, 0));
 
 	  int numtri = m_Sponza->GetNumTriangles();
-	  indices = new int[m_Sponza->Indices.size()];
-
-	  for (size_t i = 0; i < m_Sponza->Indices.size(); ++i)
-	  {
-		  indices[i] = m_Sponza->Indices[i];
-	  }
 
 	  m_indexVertexArrays = new btTriangleIndexVertexArray(numtri,
-		  indices,
+		  m_Sponza->Indices,
 		  3 * sizeof(int),
 		  m_Sponza->vertices.size(), (btScalar*) &m_Sponza->vertices[0].x, sizeof(XMFLOAT3));
 
@@ -186,7 +179,7 @@ void Direct3D::InitPhysics()
 
 
       m_fallMotionState =
-                new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(30,1000,0)));
+                new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(60,1000,0)));
 
 	  //average weight of a person = 65 kg
       btScalar mass = 65.0f;
@@ -198,7 +191,6 @@ void Direct3D::InitPhysics()
 
       m_fallRigidBody = new btRigidBody(fallRigidBodyCI);
       m_dynamicsWorld->addRigidBody(m_fallRigidBody);
-
 }
 
 
@@ -230,7 +222,7 @@ void Direct3D::InitAllModels()
 
 	//using only diffuse map will save the memory but will affect the
 	//quality
-	m_Sponza = new Model("Resources\\Models\\sponza.obj", info, true, true, true, true);
+	m_Sponza = new Model("Resources\\Models\\sponza.obj", info, true, true, true, true, true);
 
 	info.UseDefaultMaterial = false;
 	info.Scale = XMFLOAT3(0.08f, 0.08f, 0.08f);
@@ -621,8 +613,10 @@ void Direct3D::UpdateScene(float dt)
    static const unsigned short int speed = 2; //speed is double just for debugging/developers
 
 	if( GetAsyncKeyState('W') & 0x8000 )
+	{
+		m_fallRigidBody->applyCentralForce(btVector3(0.0f, 0.0f, 70.0f * dt * speed));
 		m_Cam.Walk(10.0f * dt * speed);
-	
+	}
 	if( GetAsyncKeyState('S') & 0x8000 )
 		m_Cam.Walk(-10.0f * dt * speed);
 

@@ -49,7 +49,7 @@ Weapon::Weapon(std::string path)
 
 	//using only diffuse map will save the memory but will affect the
 	//quality
-	mWeaponModel = new Model(path, info, false, true, true, true);
+	mWeaponModel = new Model(path, info, false, true, true, true, false);
 
 }
 
