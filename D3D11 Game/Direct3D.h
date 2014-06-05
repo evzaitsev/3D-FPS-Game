@@ -33,6 +33,8 @@ private:
 	SpriteBatch m_SpriteBatch;
 
 	Model* m_Sponza;
+	SkinnedModel* m_Tiny;
+	
 	Weapon* m_AK47;
 
 	ID3D11Buffer* mScreenQuadVB;

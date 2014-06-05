@@ -108,6 +108,7 @@ Direct3D::~Direct3D()
 	SafeDelete(m_Sky);
 	SafeDelete(m_Smap);
 	SafeDelete(m_AK47);
+	SafeDelete(m_Tiny);
 
 #ifdef _USE_DEFERRED_SHADING_
 	SafeDelete(m_GBuffers);
@@ -179,7 +180,7 @@ void Direct3D::InitPhysics()
 
 
       m_fallMotionState =
-                new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(60,1000,0)));
+                new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(0,1000,0)));
 
 	  //average weight of a person = 65 kg
       btScalar mass = 65.0f;
@@ -229,6 +230,15 @@ void Direct3D::InitAllModels()
 	info.technique = Effects::BasicFX->Light1TexTech;
 
 	m_AK47 = new Weapon("Resources\\Models\\ak47.x");
+
+	SkinnedModel::InitInfo SkinnedInfo;
+
+	SkinnedInfo.Mgr = &m_TextureMgr;
+	SkinnedInfo.Scale = XMFLOAT3(0.1f, 0.1f, 0.1f);
+	SkinnedInfo.Material = DefaultMat;
+	SkinnedInfo.UseDefaultMaterial = false;
+
+	m_Tiny = new SkinnedModel("Resources\\Models\\Tiny.x", SkinnedInfo);
 
 
 	XMMATRIX World = XMMatrixIdentity();
@@ -614,7 +624,6 @@ void Direct3D::UpdateScene(float dt)
 
 	if( GetAsyncKeyState('W') & 0x8000 )
 	{
-		m_fallRigidBody->applyCentralForce(btVector3(0.0f, 0.0f, 70.0f * dt * speed));
 		m_Cam.Walk(10.0f * dt * speed);
 	}
 	if( GetAsyncKeyState('S') & 0x8000 )
@@ -626,7 +635,7 @@ void Direct3D::UpdateScene(float dt)
 	if( GetAsyncKeyState('D') & 0x8000 )
 		m_Cam.Strafe(10.0f * dt * speed);
 
-	m_Cam.SetPosition(trans.getOrigin().getX(), trans.getOrigin().getY() + 12.0f, trans.getOrigin().getZ());
+	//m_Cam.SetPosition(trans.getOrigin().getX(), trans.getOrigin().getY() + 12.0f, trans.getOrigin().getZ());
 
 
 #ifdef USE_FREE_CAMERA_KEY
@@ -668,6 +677,7 @@ void Direct3D::UpdateScene(float dt)
 		ModelInstances[i].Model->Update(W);
 	}
 
+	m_Tiny->Update(dt);
 
 
 #ifdef USE_FREE_CAMERA_KEY
@@ -926,6 +936,7 @@ void Direct3D::DrawScene()
 
 	DrawModels(false);
 
+	m_Tiny->Render(XMMatrixScaling(0.1f, 0.1f, 0.1f), m_Cam.ViewProj());
 
 
 #ifdef _USE_DEFERRED_SHADING_
@@ -960,12 +971,12 @@ void Direct3D::DrawScene()
 #endif
 
 	
-	pDeviceContext->ClearDepthStencilView(m_DepthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
+	//pDeviceContext->ClearDepthStencilView(m_DepthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	m_AK47->Render();
 
-	ID3D11ShaderResourceView* nullSRV[16] = { 0 };
-	pDeviceContext->PSSetShaderResources(0, 16, nullSRV);
+	//ID3D11ShaderResourceView* nullSRV[16] = { 0 };
+	//pDeviceContext->PSSetShaderResources(0, 16, nullSRV);
 
 	HR(m_SwapChain->Present(0, 0));
 }

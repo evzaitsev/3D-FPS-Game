@@ -90,6 +90,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="cAnimationController.h" />
     <ClInclude Include="D3D11 Game.h" />
     <ClInclude Include="d3dUtil.h" />
     <ClInclude Include="d3dx11effect.h" />
@@ -126,6 +127,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="cAnimationController.cpp" />
     <ClCompile Include="D3D11 Game.cpp" />
     <ClCompile Include="d3dUtil.cpp" />
     <ClCompile Include="Direct3D.cpp" />

@@ -1684,23 +1684,3 @@ void MeshGeometry::Draw(UINT subsetId)
 }
 
 
-template <typename VertexType>
-void MeshGeometry::SetVertices(const VertexType* vertices, UINT count)
-{
-	ReleaseCOM(VertexBuffer);
-
-	VertexStride = sizeof(VertexType);
-
-	D3D11_BUFFER_DESC vbd;
-    vbd.Usage = D3D11_USAGE_IMMUTABLE;
-	vbd.ByteWidth = sizeof(VertexType) * count;
-    vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    vbd.CPUAccessFlags = 0;
-    vbd.MiscFlags = 0;
-	vbd.StructureByteStride = 0;
-
-    D3D11_SUBRESOURCE_DATA vinitData;
-    vinitData.pSysMem = vertices;
-
-	HR(pDevice->CreateBuffer(&vbd, &vinitData, &VertexBuffer));
-}

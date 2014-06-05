@@ -425,6 +425,7 @@ public:
 	void SetWorldViewProj(CXMMATRIX M)                  { WorldViewProj->SetMatrix(reinterpret_cast<const float*>(&M)); }
 	void SetViewProj(CXMMATRIX M)                       { ViewProj->SetMatrix(reinterpret_cast<const float*>(&M)); }
 	void SetWorld(CXMMATRIX M)                          { World->SetMatrix(reinterpret_cast<const float*>(&M)); }
+	void SetBoneTransforms(const XMFLOAT4X4* M, int cnt){ BoneTransforms->SetMatrixArray(reinterpret_cast<const float*>(M), 0, cnt); }
 	void SetWorldInvTranspose(CXMMATRIX M)              { WorldInvTranspose->SetMatrix(reinterpret_cast<const float*>(&M)); }
 	void SetShadowTransform(CXMMATRIX M)                { ShadowTransform->SetMatrix(reinterpret_cast<const float*>(&M)); }
 	void SetTexTransform(CXMMATRIX M)                   { TexTransform->SetMatrix(reinterpret_cast<const float*>(&M)); }
@@ -527,14 +528,9 @@ public:
 	ID3DX11EffectScalarVariable* FogRange;
 	ID3DX11EffectVariable* DirLights;
 	ID3DX11EffectVariable* PointLights;
+	ID3DX11EffectMatrixVariable* BoneTransforms;
 	ID3DX11EffectVariable* NumLights;
 	ID3DX11EffectVariable* Mat;
-
-	ID3DX11EffectScalarVariable* UsePointLight;
-	ID3DX11EffectScalarVariable* UseDirectionalLight;
-	ID3DX11EffectScalarVariable* AlphaClip;
-	ID3DX11EffectScalarVariable* UseAOMaps;
-	ID3DX11EffectScalarVariable* UseSpecularMaps;
 
 
 	ID3DX11EffectShaderResourceVariable* DiffuseMap;
