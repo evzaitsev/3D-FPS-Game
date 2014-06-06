@@ -48,13 +48,6 @@ SkinnedModel::SkinnedModel(const std::string& modelpath, InitInfo& info)
 
 	LoadSkinnedModel16(modelpath);
 
-	XMMATRIX I = XMMatrixIdentity();
-	XMFLOAT4X4 If;
-	XMStoreFloat4x4(&If, I);
-
-	for (int i = 0; i < 35; ++i)
-	FinalTransforms.push_back(If);
-
 }
 
 SkinnedModel::~SkinnedModel()
@@ -162,7 +155,7 @@ void SkinnedModel::LoadSkinnedModel16(const std::string& path)
 	std::vector<Subset> Subsets;
 
 	const aiScene* pScene = imp.ReadFile(path, aiProcessPreset_TargetRealtime_Quality | aiProcess_ConvertToLeftHanded );
-
+	
 	if (pScene == NULL)
 		ShowError(imp.GetErrorString());
 
@@ -171,7 +164,6 @@ void SkinnedModel::LoadSkinnedModel16(const std::string& path)
 
 	mSceneAnimator.Init(pScene);
 
-	std::vector<std::vector<aiVertexWeight> > WeightsPerVertex;
 	
 	for (UINT i = 0; i < pScene->mNumMeshes; ++i)
 	{
@@ -188,7 +180,19 @@ void SkinnedModel::LoadSkinnedModel16(const std::string& path)
 		mModel.mNumFaces += subset.FaceCount;
 		mModel.mNumVertices += subset.VertexCount;
 
-	
+		std::vector<std::vector<aiVertexWeight> > weightsPerVertex(mesh->mNumVertices);
+
+
+		for (UINT b = 0; b < mesh->mNumBones; ++b)
+		{
+			const aiBone* bone = mesh->mBones[b];
+
+			for (UINT w = 0; w < bone->mNumWeights; ++w)
+			{
+				weightsPerVertex[bone->mWeights[w].mVertexId].push_back(aiVertexWeight(b, bone->mWeights[w].mWeight));
+			}
+		}
+
 
 		for (UINT j = 0; j < subset.VertexCount; ++j)
 		{
@@ -206,19 +210,38 @@ void SkinnedModel::LoadSkinnedModel16(const std::string& path)
 			vertex.Normal.y = mesh->mNormals[j].y;
 			vertex.Normal.z = mesh->mNormals[j].z;
 
+
 			if (mesh->HasTextureCoords(0))
 			{
 			   vertex.Tex.x = mesh->mTextureCoords[0][j].x;
 			   vertex.Tex.y =  mesh->mTextureCoords[0][j].y;
 			}
 
+			//Init to zero
 			vertex.Weights.x = 0.0f;
 			vertex.Weights.y = 0.0f;
+			vertex.Weights.z = 0.0f;
+			vertex.Weights.w = 0.0f;
+		
+			vertex.BoneIndices[0] = 0;
+			vertex.BoneIndices[1] = 0;
+			vertex.BoneIndices[2] = 0;
+			vertex.BoneIndices[3] = 0;
 
-			XMVECTOR VertexPos = XMLoadFloat3(&vertex.Pos);
-			VertexPos *= XMLoadFloat3(&mInfo.Scale);
+			int size = weightsPerVertex[j].size();
+			
+			float weights[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 
-			XMStoreFloat3(&vertex.Pos, VertexPos);
+			for (UINT w = 0; w < size; ++w)
+			{
+				vertex.BoneIndices[w] = weightsPerVertex[j][w].mVertexId;
+				weights[w] = weightsPerVertex[j][w].mWeight;
+			}
+
+			vertex.Weights.x = weights[0];
+			vertex.Weights.y = weights[1];
+			vertex.Weights.z = weights[2];
+			vertex.Weights.w = weights[3];
 
 			vertices.push_back(vertex);
 		}
@@ -314,10 +337,11 @@ void SkinnedModel::Update(float dt)
 {
 	TimePos += dt;
 
-	//mSceneAnimator.SetAnimIndex(0);
+	mSceneAnimator.SetAnimIndex(0);
 
-	//FinalTransforms = mSceneAnimator.GetTransforms(TimePos);
+	FinalTransforms = mSceneAnimator.GetTransforms(TimePos);
 
-	if (TimePos > 5.0f)
+	if (TimePos > mSceneAnimator.Animations[0].Duration)
 		TimePos = 0.0f;
+
 }

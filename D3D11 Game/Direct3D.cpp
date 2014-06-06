@@ -234,7 +234,6 @@ void Direct3D::InitAllModels()
 	SkinnedModel::InitInfo SkinnedInfo;
 
 	SkinnedInfo.Mgr = &m_TextureMgr;
-	SkinnedInfo.Scale = XMFLOAT3(0.1f, 0.1f, 0.1f);
 	SkinnedInfo.Material = DefaultMat;
 	SkinnedInfo.UseDefaultMaterial = false;
 
@@ -936,7 +935,7 @@ void Direct3D::DrawScene()
 
 	DrawModels(false);
 
-	m_Tiny->Render(XMMatrixScaling(0.1f, 0.1f, 0.1f), m_Cam.ViewProj());
+	m_Tiny->Render(XMMatrixScaling(0.01f, 0.01f, 0.01f), m_Cam.ViewProj());
 
 
 #ifdef _USE_DEFERRED_SHADING_

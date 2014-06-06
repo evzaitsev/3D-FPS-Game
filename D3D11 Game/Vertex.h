@@ -38,7 +38,7 @@ namespace Vertex
 		XMFLOAT3 Normal;
 		XMFLOAT2 Tex;
 		XMFLOAT4 TangentU;
-		XMFLOAT2 Weights;
+		XMFLOAT4 Weights;
 		BYTE BoneIndices[4];
 	};
 }
