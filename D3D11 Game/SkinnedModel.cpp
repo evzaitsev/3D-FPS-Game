@@ -3,7 +3,7 @@
 //=================================================
 // Assimp Skinned Model Loader by newtechnology
 // This Assimp Skinned Model Loader uses Scot lee's animation code for loading skinned models
-// Status : Being developed (not completed)
+// Status : Completed (Still a lot of things to modify to make it flexible)
 //=================================================
 
 SkinnedModel::SkinnedModel(const std::string& modelpath, InitInfo& info)
