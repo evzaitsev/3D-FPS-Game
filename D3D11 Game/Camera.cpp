@@ -1,4 +1,4 @@
-`#include "stdafx.h"
+#include "stdafx.h"
 
 Camera::Camera()
 	: mPosition(0.0f, 0.0f, 0.0f), 
