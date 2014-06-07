@@ -11,7 +11,7 @@ Weapon::Weapon(std::string path)
 		std::ofstream file("Resources\\gunsettings.new");
 
 		//save default weapon configurations to file
-		char weaponinfo[400];
+		char weaponinfo[240];
 		sprintf_s(weaponinfo, "%.4f %.4f %.4f\n%.2f", 1.0f, -1.0f, 2.0f, 550.0f);
 		file << weaponinfo;
 

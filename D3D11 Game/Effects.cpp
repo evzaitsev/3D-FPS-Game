@@ -335,6 +335,7 @@ NormalMapEffect::NormalMapEffect(ID3D11Device* device, const std::wstring& filen
 
 	WorldViewProj     = mFX->GetVariableByName("gWorldViewProj")->AsMatrix();
 	ViewProj          = mFX->GetVariableByName("gViewProj")->AsMatrix();
+	BoneTransforms    = mFX->GetVariableByName("gBoneTransforms")->AsMatrix();
 	World             = mFX->GetVariableByName("gWorld")->AsMatrix();
 	WorldInvTranspose = mFX->GetVariableByName("gWorldInvTranspose")->AsMatrix();
 	ShadowTransform   = mFX->GetVariableByName("gShadowTransform")->AsMatrix();
@@ -355,11 +356,6 @@ NormalMapEffect::NormalMapEffect(ID3D11Device* device, const std::wstring& filen
 	NumLights    = mFX->GetVariableByName("NumLights");
 
 
-	UseDirectionalLight = mFX->GetVariableByName("UseDirectionalLight")->AsScalar();
-	UsePointLight       = mFX->GetVariableByName("UsePointLight")->AsScalar();
-	UseAOMaps           = mFX->GetVariableByName("AOMaps")->AsScalar();
-	UseSpecularMaps     = mFX->GetVariableByName("SpecularMaps")->AsScalar();
-	AlphaClip           = mFX->GetVariableByName("AlphaClip")->AsScalar();
 }
 
 NormalMapEffect::~NormalMapEffect()

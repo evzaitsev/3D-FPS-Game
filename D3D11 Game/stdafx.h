@@ -32,19 +32,23 @@
 #include <fstream>
 #include <vector>
 #include <windowsx.h>
+#include <map>
 #include <list>
+#include <tuple>
 #include <stdio.h>
 #include <Gdiplus.h>
-#include <map>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+
+
 
 // TODO: reference additional headers your program requires here
 
 #include "Lighting.h"
 #include "btBulletDynamicsCommon.h"
 #include "D3D11 Game.h"
+#include "cAnimationController.h"
 #include "d3dUtil.h"
 #include "SpriteBatch.h"
 #include "FontSheet.h"
@@ -54,6 +58,7 @@
 #include "Math.h"
 #include "Camera.h"
 #include "Effects.h"
+#include "SkinnedData.h"
 #include "RenderStates.h"
 #include "Vertex.h"
 #include "Sky.h"
@@ -64,11 +69,10 @@
 #include "Waves.h"
 #include "Ssao.h"
 #include "Model.h"
+#include "SkinnedModel.h"
 #include "trees.h"
 #include "Grass.h"
 #include "Map.h"
 #include "gBuffers.h"
 #include "WeaponRenderer.h"
-#include "SkinnedData.h"
-#include "SkinnedModel.h"
 #include "Direct3D.h"
