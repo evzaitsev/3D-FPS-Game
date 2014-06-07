@@ -6,7 +6,7 @@
 // Status : Completed (Still a lot of things to modify to make it flexible)
 // Updates :
 // *Added SkinnedModelInstance class to draw a single model multiple times
-// *Added Support for Skinned Models who require 32 Bit Indices
+// *Added Support for Skinned Models which require 32 Bit Indices
 //=================================================
 
 SkinnedModel::SkinnedModel(const std::string& modelpath, InitInfo& info, bool Use32BitIndexFormat)
