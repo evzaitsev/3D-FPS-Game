@@ -6,7 +6,8 @@ Model::Model(
 	bool Use32bitFormat, 
 	bool NormalMapped, 
 	bool HasAOMap,
-	bool HasSpecMap)
+	bool HasSpecMap,
+	bool FillIndices)
 {
 
 	Lights[0].Ambient  = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
@@ -51,6 +52,7 @@ Model::Model(
 	mVisibleObjectCount = 0;
 	mDrawCalls = 0;
 
+	Indices = nullptr;
 	mInstancedBuffer = nullptr;
 
 	mHasNormalMaps = NormalMapped;
@@ -58,45 +60,28 @@ Model::Model(
 	mHasSpecularMaps = HasSpecMap;
 
 
-	if (HasAOMap)
+	if (Use32bitFormat)
 	{
 		if (NormalMapped)
-		{
-			if (Use32bitFormat)
-				LoadNormalMapModel32(filename, true, HasSpecMap);
-			else
-				LoadNormalMapModel16(filename, true, HasSpecMap);
-			return;
-		}
-
-		if (Use32bitFormat)
-			LoadBasicModel16(filename, true, HasSpecMap);
-		else
-			LoadBasicModel32(filename, true, HasSpecMap);
-
-		return;
+			LoadNormalMapModel32(filename, HasAOMap, HasSpecMap, FillIndices);
+		else 
+			LoadBasicModel32(filename, HasAOMap, HasSpecMap, FillIndices);
 	}
-
-
-	if (NormalMapped)
-	{
-		if (Use32bitFormat)
-			LoadNormalMapModel32(filename, false, HasSpecMap);
-		else
-			LoadNormalMapModel16(filename, false, HasSpecMap);
-		
-		return;
-	}
-
-	if (Use32bitFormat)
-		LoadBasicModel32(filename, false, HasSpecMap);
 	else
-		LoadBasicModel16(filename, false, HasSpecMap);
+	{
+		if (NormalMapped)
+			LoadNormalMapModel16(filename, HasAOMap, HasSpecMap, FillIndices);
+		else
+			LoadBasicModel16(filename, HasAOMap, HasSpecMap, FillIndices);
+	}
+
 }
 
 Model::~Model()
 {
 	ReleaseCOM(mInstancedBuffer);
+
+	SafeDelete(Indices);
 }
 
 void Model::UpdateInstanceData(XNA::AxisAlignedBox& box)
@@ -306,7 +291,7 @@ void Model::LoadTextures(aiMaterial* Mat, bool& AOMap, bool NormalMap, bool& Spe
 	SpecularMapTexturePath = "Resources\\Textures\\" + SpecularMapTexturePath;
 
 
-#if defined(DEBUG) || (_DEBUG)
+#if defined(DEBUG) || defined(_DEBUG)
 	OutputDebugStringA(NormalMapTexturePath.c_str());
 	OutputDebugStringA("\n");
 	OutputDebugStringA(AmbientOcclusionMapTexturePath.c_str());
@@ -314,13 +299,15 @@ void Model::LoadTextures(aiMaterial* Mat, bool& AOMap, bool NormalMap, bool& Spe
 	OutputDebugStringA(SpecularMapTexturePath.c_str());
 	OutputDebugStringA("\n");
 
-	if (!FileExists(SpecularMapTexturePath))
+
+
+	if (SpecularMap && !FileExists(SpecularMapTexturePath))
 		ShowError(SpecularMapTexturePath.c_str());
 
-	if (!FileExists(AmbientOcclusionMapTexturePath))
+	if (AOMap && !FileExists(AmbientOcclusionMapTexturePath))
 		ShowError(AmbientOcclusionMapTexturePath.c_str());
 
-	if (!FileExists(NormalMapTexturePath))
+	if (NormalMap && !FileExists(NormalMapTexturePath))
 		ShowError(NormalMapTexturePath.c_str());
 #endif
 
@@ -344,7 +331,7 @@ void Model::LoadTextures(aiMaterial* Mat, bool& AOMap, bool NormalMap, bool& Spe
 	}
 }
 
-void Model::LoadNormalMapModel16(const std::string& filename, bool AOMap, bool SpecularMap)
+void Model::LoadNormalMapModel16(const std::string& filename, bool &AOMap, bool &SpecularMap, bool &FillIndices)
 {
 	Assimp::Importer imp;
 
@@ -462,11 +449,20 @@ void Model::LoadNormalMapModel16(const std::string& filename, bool AOMap, bool S
 		subsets.push_back(subset);
 	}
 
+
 	
 
 	//required for collision detection, picking and computing AABB
 	for (size_t i = 0; i < nmap_vertices.size(); ++i)
 		vertices.push_back(nmap_vertices[i].Pos);
+
+	if (FillIndices)
+	{
+	    Indices = new INT[indices.size()];
+
+	    for (size_t i = 0; i < indices.size(); ++i)
+		Indices[i] = indices[i];
+	}
 
 	ModelVisibleList.resize(subsets.size());
 
@@ -478,7 +474,7 @@ void Model::LoadNormalMapModel16(const std::string& filename, bool AOMap, bool S
 
 }
 
-void Model::LoadNormalMapModel32(const std::string& filename, bool AOMap, bool SpecularMap)
+void Model::LoadNormalMapModel32(const std::string& filename, bool &AOMap, bool &SpecularMap, bool &FillIndices)
 {
 	Assimp::Importer imp;
 
@@ -610,8 +606,13 @@ void Model::LoadNormalMapModel32(const std::string& filename, bool AOMap, bool S
 	for (size_t i = 0; i < nmap_vertices.size(); ++i)
 		vertices.push_back(nmap_vertices[i].Pos);
 
-	for (size_t i = 0; i < indices.size(); ++i)
-		Indices.push_back(indices[i]);
+	if (FillIndices)
+	{
+	    Indices = new INT[indices.size()];
+
+	    for (size_t i = 0; i < indices.size(); ++i)
+		Indices[i] = indices[i];
+	}
 
 	ModelVisibleList.resize(subsets.size());
 
@@ -624,7 +625,7 @@ void Model::LoadNormalMapModel32(const std::string& filename, bool AOMap, bool S
 
 }
 
-void Model::LoadBasicModel32(const std::string& filename, bool AOMap, bool SpecularMap)
+void Model::LoadBasicModel32(const std::string& filename, bool &AOMap, bool &SpecularMap, bool &FillIndices)
 {
 	Assimp::Importer imp;
 
@@ -749,6 +750,15 @@ void Model::LoadBasicModel32(const std::string& filename, bool AOMap, bool Specu
 		vertices.push_back(temp_vertices[i].Pos);
 	}
 
+	
+	if (FillIndices)
+	{
+	    Indices = new INT[indices.size()];
+
+	    for (size_t i = 0; i < indices.size(); ++i)
+		Indices[i] = indices[i];
+	}
+
 	ModelVisibleList.resize(subsets.size());
 
 	mModel.mSubsetCount = subsets.size();
@@ -762,7 +772,7 @@ void Model::LoadBasicModel32(const std::string& filename, bool AOMap, bool Specu
 }
 
 
-void Model::LoadBasicModel16(const std::string& filename, bool AOMap, bool SpecularMap)
+void Model::LoadBasicModel16(const std::string& filename, bool &AOMap, bool &SpecularMap, bool &FillIndices)
 {
 
 	Assimp::Importer imp;
@@ -885,6 +895,15 @@ void Model::LoadBasicModel16(const std::string& filename, bool AOMap, bool Specu
 
 	for (size_t i = 0; i < temp_vertices.size(); ++i)
 		vertices.push_back(temp_vertices[i].Pos);
+
+	
+	if (FillIndices)
+	{
+	    Indices = new INT[indices.size()];
+
+	    for (size_t i = 0; i < indices.size(); ++i)
+		Indices[i] = indices[i];
+	}
 
 	ModelVisibleList.resize(subsets.size());
 
@@ -1034,14 +1053,14 @@ void Model::RenderInstancedShadowMap(CXMMATRIX World, CXMMATRIX ViewProj)
 
 	XMMATRIX W = World;
 
-	Effects::BuildShadowMapInstancedFX->SetEyePosW(d3d->m_Cam.GetPosition());
+	Effects::BuildShadowMapFX->SetEyePosW(d3d->m_Cam.GetPosition());
 
 	ID3DX11EffectTechnique* Tech;
 
 	if (mInfo.AlphaClip)
-		Tech = Effects::BuildShadowMapInstancedFX->BuildShadowMapAlphaClipTech;
+		Tech = Effects::BuildShadowMapFX->BuildShadowMapInstancedTech;
 	else
-		Tech = Effects::BuildShadowMapInstancedFX->BuildShadowMapTech;
+		Tech = Effects::BuildShadowMapFX->BuildShadowMapAlphaClipInstancedTech;
 
 	UINT stride[2] = {sizeof(Vertex::Basic32), sizeof(InstancedData)};
     UINT offset[2] = {0,0};
@@ -1064,12 +1083,12 @@ void Model::RenderInstancedShadowMap(CXMMATRIX World, CXMMATRIX ViewProj)
 			XMMATRIX worldInvTranspose = MathHelper::InverseTranspose(W);
 		    XMMATRIX TexTransform = XMMatrixIdentity();
 
-		    Effects::BuildShadowMapInstancedFX->SetWorld(W);
-			Effects::BuildShadowMapInstancedFX->SetViewProj(ViewProj);
-		    Effects::BuildShadowMapInstancedFX->SetWorldInvTranspose(worldInvTranspose);
-	        Effects::BuildShadowMapInstancedFX->SetTexTransform(TexTransform);
+		    Effects::BuildShadowMapFX->SetWorld(W);
+			Effects::BuildShadowMapFX->SetViewProj(ViewProj);
+		    Effects::BuildShadowMapFX->SetWorldInvTranspose(worldInvTranspose);
+	        Effects::BuildShadowMapFX->SetTexTransform(TexTransform);
 
-			Effects::BuildShadowMapInstancedFX->SetDiffuseMap(DiffuseMapSRV[i]);
+			Effects::BuildShadowMapFX->SetDiffuseMap(DiffuseMapSRV[i]);
 
 			Tech->GetPassByIndex(p)->Apply(0, pDeviceContext);
 
@@ -1665,23 +1684,3 @@ void MeshGeometry::Draw(UINT subsetId)
 }
 
 
-template <typename VertexType>
-void MeshGeometry::SetVertices(const VertexType* vertices, UINT count)
-{
-	ReleaseCOM(VertexBuffer);
-
-	VertexStride = sizeof(VertexType);
-
-	D3D11_BUFFER_DESC vbd;
-    vbd.Usage = D3D11_USAGE_IMMUTABLE;
-	vbd.ByteWidth = sizeof(VertexType) * count;
-    vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    vbd.CPUAccessFlags = 0;
-    vbd.MiscFlags = 0;
-	vbd.StructureByteStride = 0;
-
-    D3D11_SUBRESOURCE_DATA vinitData;
-    vinitData.pSysMem = vertices;
-
-	HR(pDevice->CreateBuffer(&vbd, &vinitData, &VertexBuffer));
-}

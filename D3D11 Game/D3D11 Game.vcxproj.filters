@@ -114,6 +114,12 @@
     <ClInclude Include="WeaponRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SkinnedModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cAnimationController.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -197,6 +203,12 @@
     <ClCompile Include="WeaponRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SkinnedModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cAnimationController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="D3D11 Game.rc">
@@ -231,9 +243,6 @@
       <Filter>Shaders</Filter>
     </CustomBuild>
     <CustomBuild Include="Resources\Shaders\Terrain.fx">
-      <Filter>Shaders</Filter>
-    </CustomBuild>
-    <CustomBuild Include="Resources\Shaders\BuildShadowMapInstanced.fx">
       <Filter>Shaders</Filter>
     </CustomBuild>
     <CustomBuild Include="Resources\Shaders\DisplacementMap.fx">

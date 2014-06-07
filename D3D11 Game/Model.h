@@ -1,17 +1,10 @@
 #ifndef _MODEL_H_
 #define _MODEL_H_
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-
-
-
 struct InstancedData
 {
    XMFLOAT4X4 World;
 };
-
 
 struct Subset
 {
@@ -69,6 +62,28 @@ public:
 	std::vector<Subset> SubsetTable;
 };
 
+template <typename VertexType>
+void MeshGeometry::SetVertices(const VertexType* vertices, UINT count)
+{
+	ReleaseCOM(VertexBuffer);
+
+	VertexStride = sizeof(VertexType);
+
+	D3D11_BUFFER_DESC vbd;
+    vbd.Usage = D3D11_USAGE_IMMUTABLE;
+	vbd.ByteWidth = sizeof(VertexType) * count;
+    vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    vbd.CPUAccessFlags = 0;
+    vbd.MiscFlags = 0;
+	vbd.StructureByteStride = 0;
+
+    D3D11_SUBRESOURCE_DATA vinitData;
+    vinitData.pSysMem = vertices;
+
+	HR(pDevice->CreateBuffer(&vbd, &vinitData, &VertexBuffer));
+}
+
+
 struct MeshData
 {
     ID3D11Buffer** VertexBuffer;
@@ -119,7 +134,7 @@ public:
 		//only set this if you want to manually set material
 		Material Material; 
 
-		//clip pixels which alpha value near to 0 ?
+		//clip pixels with alpha value near to 0
 		bool AlphaClip;
 
 		//num of dir lights
@@ -160,11 +175,16 @@ public:
 
 	std::vector<InstancedData> mInstancedData;
 	std::vector<XMFLOAT3> vertices;
-	std::vector<UINT> Indices;
 	std::vector<XNA::AxisAlignedBox> AABB;
+
+	//for bullet physics
+	//can delete whenever not required to save memory
+	int* Indices;
 public:
+	//Bullet physics requires you to feed indices to it
+	//Set FillIndices to true if you need Indices or false if you don't
 	Model(const std::string& filename, 
-		InitInfo& info, bool Use32bitFormat, bool NormalMapped, bool HasAOMap, bool HasSpecularMap);
+		InitInfo& info, bool Use32bitFormat, bool NormalMapped, bool HasAOMap, bool HasSpecularMap, bool FillIndices);
 	~Model();
 
 	void Render(CXMMATRIX World, CXMMATRIX ViewProj);
@@ -202,10 +222,10 @@ private:
 	Model(const Model& rhs);
 	Model& operator=(const Model& rhs);
 
-    void LoadBasicModel16(const std::string& filename, bool AOMap, bool SpecularMap);
-	void LoadBasicModel32(const std::string& filename, bool AOMap, bool SpecularMap);
-	void LoadNormalMapModel16(const std::string& filename, bool AOMap, bool SpecularMap);
-	void LoadNormalMapModel32(const std::string& filename, bool AOMap, bool SpecularMap);
+    void LoadBasicModel16(const std::string& filename, bool &AOMap, bool &SpecularMap, bool &FillIndices);
+	void LoadBasicModel32(const std::string& filename, bool &AOMap, bool &SpecularMap, bool &FillIndices);
+	void LoadNormalMapModel16(const std::string& filename, bool &AOMap, bool &SpecularMap, bool &FillIndices);
+	void LoadNormalMapModel32(const std::string& filename, bool &AOMap, bool &SpecularMap, bool &FillIndices);
 
 	void LoadTextures(aiMaterial* mat, bool& AOMap, bool NormalMaps, bool& SpecularMap);
 	void LoadMaterials(aiMaterial* mat);

@@ -33,16 +33,12 @@ private:
 	SpriteBatch m_SpriteBatch;
 
 	Model* m_Sponza;
+	SkinnedModel* m_Tiny;
+	
 	Weapon* m_AK47;
-
-	int* indices;
 
 	ID3D11Buffer* mScreenQuadVB;
 	ID3D11Buffer* mScreenQuadIB;
-
-
-	ID3D11Buffer* mFullScreenQuadVB;
-	ID3D11Buffer* mFullScreenQuadIB;
 
 	static const int SMapSize = 1024;
 
@@ -51,6 +47,7 @@ private:
 #endif
 
 	std::vector<ModelInstance> ModelInstances;  
+	std::vector<SkinnedModelInstance> SkinnedModelInstances;
 
 	btTriangleIndexVertexArray*  m_indexVertexArrays;
 	btBroadphaseInterface* m_broadphase;
@@ -75,7 +72,7 @@ public:
 	ShadowMap* m_Smap;
 	//Ssao* m_Ssao;
 	TextureMgr m_TextureMgr;
-	Terrain m_Land;
+
 
 private:
 	void UpdateInstancedModelsData();
@@ -97,7 +94,7 @@ private:
 
 	void RenderToShadowMap();
 
-#if defined(DEBUG) || (_DEBUG)
+#if defined(DEBUG) || defined(_DEBUG)
 	void DrawScreenQuad();
 #endif
 

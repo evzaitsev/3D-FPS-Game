@@ -16,6 +16,16 @@ cbuffer cbPerFrame
 
 };
 
+cbuffer cbSkinned
+{
+	float4x4 gBoneTransforms[96];
+};
+
+cbuffer cbFixed
+{
+	static const int NUM_INFLUENCE_PER_VERTEX = 4;
+};
+
 cbuffer cbPerObject
 {
 	float4x4 gWorld;
@@ -60,6 +70,16 @@ struct VertexIn
 	float3 NormalL  : NORMAL;
 	float2 Tex      : TEXCOORD;
 	float3 TangentL : TANGENT;
+};
+
+struct SkinnedVertexIn
+{
+	float3 PosL       : POSITION;
+	float3 NormalL    : NORMAL;
+	float2 Tex        : TEXCOORD;
+	float4 TangentL   : TANGENT;
+	float4 Weights    : WEIGHTS;
+	uint4 BoneIndices : BONEINDICES;
 };
 
 struct InstancedVertexIn
@@ -119,6 +139,51 @@ VertexOut VS(VertexIn vin)
 
 	// Generate projective tex-coords to project shadow map onto scene.
 	vout.ShadowPosH = mul(float4(vin.PosL, 1.0f), gShadowTransform);
+
+
+	return vout;
+}
+
+VertexOut SKINNED_VS(SkinnedVertexIn vin)
+{
+    VertexOut vout;
+
+	// Init array or else we get strange warnings about SV_POSITION.
+	float weights[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+
+	weights[0] = vin.Weights.x;
+	weights[1] = vin.Weights.y;
+	weights[2] = vin.Weights.z;
+	weights[3] = vin.Weights.w;
+
+
+	float3 posL     = float3(0.0f, 0.0f, 0.0f);
+	float3 normalL  = float3(0.0f, 0.0f, 0.0f);
+	float3 tangentL = float3(0.0f, 0.0f, 0.0f);
+
+	for(int i = 0; i < NUM_INFLUENCE_PER_VERTEX; ++i)
+	{
+	    // Assume no nonuniform scaling when transforming normals, so 
+		// that we do not have to use the inverse-transpose.
+
+	    posL     += weights[i]*mul(float4(vin.PosL, 1.0f), gBoneTransforms[vin.BoneIndices[i]]).xyz;
+		normalL  += weights[i]*mul(vin.NormalL,  (float3x3)gBoneTransforms[vin.BoneIndices[i]]);
+		tangentL += weights[i]*mul(vin.TangentL.xyz, (float3x3)gBoneTransforms[vin.BoneIndices[i]]);
+	}
+ 
+	// Transform to world space space.
+	vout.PosW     = mul(float4(posL, 1.0f), gWorld).xyz;
+	vout.NormalW  = mul(normalL, (float3x3)gWorldInvTranspose);
+	vout.TangentW = float4(mul(tangentL, (float3x3)gWorld), vin.TangentL.w);
+
+	// Transform to homogeneous clip space.
+	vout.PosH = mul(float4(posL, 1.0f), gWorldViewProj);
+	
+	// Output vertex attributes for interpolation across triangle.
+	vout.Tex = mul(float4(vin.Tex, 0.0f, 1.0f), gTexTransform).xy;
+
+	// Generate projective tex-coords to project shadow map onto scene.
+	vout.ShadowPosH = mul(float4(posL, 1.0f), gShadowTransform);
 
 
 	return vout;
@@ -912,5 +977,16 @@ technique11 Light0PointLight0Instanced
       SetVertexShader( CompileShader( vs_4_0, VS_INSTANCED() ) );
       SetGeometryShader( NULL );
       SetPixelShader( CompileShader( ps_4_0, PS(0, 0, false, false, false, false, false, false))  );
+    }
+}
+
+
+technique11 Light1TexSkinned
+{
+    pass P0
+    {
+        SetVertexShader( CompileShader( vs_4_0, SKINNED_VS() ) );
+		SetGeometryShader( NULL );
+        SetPixelShader( CompileShader( ps_4_0, PS(1, 0, true, false, false, false, false, false) ) );
     }
 }

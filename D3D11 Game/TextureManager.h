@@ -1,8 +1,6 @@
 #ifndef TEXTUREMGR_H
 #define TEXTUREMGR_H
 
-#include <map>
-
 ///<summary>
 /// Simple texture manager to avoid loading duplicate textures from file.  That can
 /// happen, for example, if multiple meshes reference the same texture filename. 

@@ -330,13 +330,12 @@ NormalMapEffect::NormalMapEffect(ID3D11Device* device, const std::wstring& filen
     Light3PointLight3TexAOTech = mFX->GetTechniqueByName("Light3PointLight3TexAO");
     Light3PointLight3TexAOSpecTech = mFX->GetTechniqueByName("Light3PointLight3TexAOSpec");
 
-
-
-   Light0PointLight0InstancedTech = mFX->GetTechniqueByName("Light0PointLight0Instanced");
-
+    Light0PointLight0InstancedTech = mFX->GetTechniqueByName("Light0PointLight0Instanced");
+    Light1TexSkinnedTech = mFX->GetTechniqueByName("Light1TexSkinned");
 
 	WorldViewProj     = mFX->GetVariableByName("gWorldViewProj")->AsMatrix();
 	ViewProj          = mFX->GetVariableByName("gViewProj")->AsMatrix();
+	BoneTransforms    = mFX->GetVariableByName("gBoneTransforms")->AsMatrix();
 	World             = mFX->GetVariableByName("gWorld")->AsMatrix();
 	WorldInvTranspose = mFX->GetVariableByName("gWorldInvTranspose")->AsMatrix();
 	ShadowTransform   = mFX->GetVariableByName("gShadowTransform")->AsMatrix();
@@ -357,11 +356,6 @@ NormalMapEffect::NormalMapEffect(ID3D11Device* device, const std::wstring& filen
 	NumLights    = mFX->GetVariableByName("NumLights");
 
 
-	UseDirectionalLight = mFX->GetVariableByName("UseDirectionalLight")->AsScalar();
-	UsePointLight       = mFX->GetVariableByName("UsePointLight")->AsScalar();
-	UseAOMaps           = mFX->GetVariableByName("AOMaps")->AsScalar();
-	UseSpecularMaps     = mFX->GetVariableByName("SpecularMaps")->AsScalar();
-	AlphaClip           = mFX->GetVariableByName("AlphaClip")->AsScalar();
 }
 
 NormalMapEffect::~NormalMapEffect()
@@ -375,6 +369,9 @@ BuildShadowMapEffect::BuildShadowMapEffect(ID3D11Device* device, const std::wstr
 {
 	BuildShadowMapTech           = mFX->GetTechniqueByName("BuildShadowMapTech");
 	BuildShadowMapAlphaClipTech  = mFX->GetTechniqueByName("BuildShadowMapAlphaClipTech");
+
+	BuildShadowMapInstancedTech = mFX->GetTechniqueByName("BuildShadowMapInstancedTech");
+	BuildShadowMapAlphaClipInstancedTech = mFX->GetTechniqueByName("BuildShadowMapAlphaClipInstancedTech");
 
 	TessBuildShadowMapTech           = mFX->GetTechniqueByName("TessBuildShadowMapTech");
 	TessBuildShadowMapAlphaClipTech  = mFX->GetTechniqueByName("TessBuildShadowMapAlphaClipTech");
@@ -399,34 +396,6 @@ BuildShadowMapEffect::~BuildShadowMapEffect()
 }
 #pragma endregion
 
-#pragma region BuildShadowMapInstancedEffect
-BuildShadowMapInstancedEffect::BuildShadowMapInstancedEffect(ID3D11Device* device, const std::wstring& filename)
-	: Effect(device, filename)
-{
-	BuildShadowMapTech           = mFX->GetTechniqueByName("BuildShadowMapTech");
-	BuildShadowMapAlphaClipTech  = mFX->GetTechniqueByName("BuildShadowMapAlphaClipTech");
-
-	TessBuildShadowMapTech           = mFX->GetTechniqueByName("TessBuildShadowMapTech");
-	TessBuildShadowMapAlphaClipTech  = mFX->GetTechniqueByName("TessBuildShadowMapAlphaClipTech");
-	
-	ViewProj          = mFX->GetVariableByName("gViewProj")->AsMatrix();
-	World             = mFX->GetVariableByName("gWorld")->AsMatrix();
-	WorldInvTranspose = mFX->GetVariableByName("gWorldInvTranspose")->AsMatrix();
-	TexTransform      = mFX->GetVariableByName("gTexTransform")->AsMatrix();
-	EyePosW           = mFX->GetVariableByName("gEyePosW")->AsVector();
-	HeightScale       = mFX->GetVariableByName("gHeightScale")->AsScalar();
-	MaxTessDistance   = mFX->GetVariableByName("gMaxTessDistance")->AsScalar();
-	MinTessDistance   = mFX->GetVariableByName("gMinTessDistance")->AsScalar();
-	MinTessFactor     = mFX->GetVariableByName("gMinTessFactor")->AsScalar();
-	MaxTessFactor     = mFX->GetVariableByName("gMaxTessFactor")->AsScalar();
-	DiffuseMap        = mFX->GetVariableByName("gDiffuseMap")->AsShaderResource();
-	NormalMap         = mFX->GetVariableByName("gNormalMap")->AsShaderResource();
-}
-
-BuildShadowMapInstancedEffect::~BuildShadowMapInstancedEffect()
-{
-}
-#pragma endregion
 
 #pragma region SkyEffect
 SkyEffect::SkyEffect(ID3D11Device* device, const std::wstring& filename)
@@ -442,7 +411,7 @@ SkyEffect::~SkyEffect()
 }
 #pragma endregion
 
-#if defined(DEBUG) || (_DEBUG)
+#if defined(DEBUG) || defined(_DEBUG)
 #pragma region DebugTexEffect
 DebugTexEffect::DebugTexEffect(ID3D11Device* device, const std::wstring& filename)
 	: Effect(device, filename)
@@ -690,7 +659,6 @@ SpriteEffect::~SpriteEffect()
 BasicEffect*           Effects::BasicFX           = 0;
 NormalMapEffect*       Effects::NormalMapFX       = 0;
 BuildShadowMapEffect*  Effects::BuildShadowMapFX  = 0;
-BuildShadowMapInstancedEffect* Effects::BuildShadowMapInstancedFX = 0;
 SkyEffect*             Effects::SkyFX             = 0;
 #if defined(DEBUG)||(_DEBUG)
 DebugTexEffect*        Effects::DebugTexFX        = 0;
@@ -714,7 +682,6 @@ void Effects::InitAll(ID3D11Device* device)
 	BasicFX           = new BasicEffect(device, L"Resources/Shaders/Basic.fxo");
 	NormalMapFX       = new NormalMapEffect(device, L"Resources/Shaders/NormalMap.fxo");
 	BuildShadowMapFX  = new BuildShadowMapEffect(device, L"Resources/Shaders/BuildShadowMap.fxo");
-	BuildShadowMapInstancedFX = new BuildShadowMapInstancedEffect(device, L"Resources/Shaders/BuildShadowMapInstanced.fxo");
 	SkyFX             = new SkyEffect(device, L"Resources/Shaders/Sky.fxo");
 #if defined(DEBUG)||(_DEBUG)
 	DebugTexFX        = new DebugTexEffect(device, L"Resources/Shaders/DebugTexture.fxo");
@@ -739,7 +706,6 @@ void Effects::DestroyAll()
 	SafeDelete(BasicFX);
 	SafeDelete(NormalMapFX);
 	SafeDelete(BuildShadowMapFX);
-	SafeDelete(BuildShadowMapInstancedFX);
 	SafeDelete(SkyFX);
 #if defined(DEBUG)||(_DEBUG)
 	SafeDelete(DebugTexFX);
