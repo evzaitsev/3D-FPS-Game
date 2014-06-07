@@ -244,6 +244,24 @@ void Direct3D::InitAllModels()
 	//using only diffuse map will save the memory but will affect the
 	//quality
 	m_Sponza = new Model("Resources\\Models\\sponza.obj", info, true, true, true, true, true);
+<<<<<<< HEAD
+=======
+
+	info.UseDefaultMaterial = false;
+	info.Scale = XMFLOAT3(0.08f, 0.08f, 0.08f);
+	info.technique = Effects::BasicFX->Light1TexTech;
+
+	m_AK47 = new Weapon("Resources\\Models\\ak47.x");
+
+	SkinnedModel::InitInfo SkinnedInfo;
+
+	SkinnedInfo.Mgr = &m_TextureMgr;
+	SkinnedInfo.Material = DefaultMat;
+	SkinnedInfo.UseDefaultMaterial = false;
+
+	m_Tiny = new SkinnedModel("Resources\\Models\\Tiny.x", SkinnedInfo);
+
+>>>>>>> a9c11a661a28e1282702d16138bb6c56491de5b9
 
 	
 	XMMATRIX World = XMMatrixIdentity();
@@ -617,7 +635,12 @@ void Direct3D::UpdateScene(float dt)
 	if( GetAsyncKeyState('D') & 0x8000 )
 		m_Cam.Strafe(10.0f * dt * speed);
 
+<<<<<<< HEAD
 	m_Cam.SetPosition(trans.getOrigin().getX(), trans.getOrigin().getY() + 12.0f, trans.getOrigin().getZ());
+=======
+	//m_Cam.SetPosition(trans.getOrigin().getX(), trans.getOrigin().getY() + 12.0f, trans.getOrigin().getZ());
+
+>>>>>>> a9c11a661a28e1282702d16138bb6c56491de5b9
 
 #ifdef USE_FREE_CAMERA_KEY
 	if( GetAsyncKeyState('P') & 1 )
@@ -658,6 +681,7 @@ void Direct3D::UpdateScene(float dt)
 		ModelInstances[i].Model->Update(W);
 	}
 
+<<<<<<< HEAD
 	for (USHORT i = 0; i < SkinnedModelInstances.size(); ++i)
 	{
 		if (SkinnedModelInstances[i].SkinnedModel == 0)
@@ -666,6 +690,9 @@ void Direct3D::UpdateScene(float dt)
 		SkinnedModelInstances[i].Update(dt);
 	}
 
+=======
+	m_Tiny->Update(dt);
+>>>>>>> a9c11a661a28e1282702d16138bb6c56491de5b9
 
 	m_AK47->Update(dt);
 
@@ -932,6 +959,11 @@ void Direct3D::DrawScene()
 
 	DrawModels(false);
 
+<<<<<<< HEAD
+=======
+	m_Tiny->Render(XMMatrixScaling(0.01f, 0.01f, 0.01f), m_Cam.ViewProj());
+
+>>>>>>> a9c11a661a28e1282702d16138bb6c56491de5b9
 
 #ifdef _USE_DEFERRED_SHADING_
 	//Do lighting as a post processing step
@@ -964,12 +996,21 @@ void Direct3D::DrawScene()
 
 #endif
 
+<<<<<<< HEAD
+=======
+	
+>>>>>>> a9c11a661a28e1282702d16138bb6c56491de5b9
 	//pDeviceContext->ClearDepthStencilView(m_DepthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	m_AK47->Render();
 
+<<<<<<< HEAD
 	ID3D11ShaderResourceView* nullSRV[16] = { 0 };
 	pDeviceContext->PSSetShaderResources(0, 16, nullSRV);
+=======
+	//ID3D11ShaderResourceView* nullSRV[16] = { 0 };
+	//pDeviceContext->PSSetShaderResources(0, 16, nullSRV);
+>>>>>>> a9c11a661a28e1282702d16138bb6c56491de5b9
 
 	HR(m_SwapChain->Present(0, 0));
 }

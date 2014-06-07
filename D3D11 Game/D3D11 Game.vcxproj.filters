@@ -117,6 +117,12 @@
     <ClInclude Include="SkinnedModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+<<<<<<< HEAD
+=======
+    <ClInclude Include="SkinnedData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+>>>>>>> a9c11a661a28e1282702d16138bb6c56491de5b9
     <ClInclude Include="cAnimationController.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -206,6 +212,12 @@
     <ClCompile Include="SkinnedModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+<<<<<<< HEAD
+=======
+    <ClCompile Include="SkinnedData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+>>>>>>> a9c11a661a28e1282702d16138bb6c56491de5b9
     <ClCompile Include="cAnimationController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

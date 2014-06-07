@@ -58,6 +58,7 @@
 #include "Math.h"
 #include "Camera.h"
 #include "Effects.h"
+#include "SkinnedData.h"
 #include "RenderStates.h"
 #include "Vertex.h"
 #include "Sky.h"
