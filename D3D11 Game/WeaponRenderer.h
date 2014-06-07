@@ -13,7 +13,6 @@ private:
 		float RotationY;
 	};
 private:
-<<<<<<< HEAD
 	//3D Model stuff
 	SkinnedModel* mWeaponModel;
 	WeaponSettings mWeaponSettings;
@@ -23,10 +22,6 @@ private:
 	float TimePos;
 	std::string AnimationClip;
 	int AnimationIndex;
-=======
-	Model* mWeaponModel;
-	WeaponSettings mWeaponSettings;
->>>>>>> a9c11a661a28e1282702d16138bb6c56491de5b9
 public:
 	Weapon(std::string WeaponModelPath);
 	~Weapon();

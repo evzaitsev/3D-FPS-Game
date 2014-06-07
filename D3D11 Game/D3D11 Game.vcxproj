@@ -107,10 +107,6 @@
     <ClInclude Include="RenderStates.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ShadowMap.h" />
-<<<<<<< HEAD
-=======
-    <ClInclude Include="SkinnedData.h" />
->>>>>>> a9c11a661a28e1282702d16138bb6c56491de5b9
     <ClInclude Include="SkinnedModel.h" />
     <ClInclude Include="Sky.h" />
     <ClInclude Include="SpriteBatch.h" />
@@ -144,10 +140,6 @@
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="RenderStates.cpp" />
     <ClCompile Include="ShadowMap.cpp" />
-<<<<<<< HEAD
-=======
-    <ClCompile Include="SkinnedData.cpp" />
->>>>>>> a9c11a661a28e1282702d16138bb6c56491de5b9
     <ClCompile Include="SkinnedModel.cpp" />
     <ClCompile Include="Sky.cpp" />
     <ClCompile Include="SpriteBatch.cpp" />

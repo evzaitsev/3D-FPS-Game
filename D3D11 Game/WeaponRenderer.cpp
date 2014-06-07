@@ -2,30 +2,6 @@
 
 Weapon::Weapon(std::string path)
 {
-	if (!FileExists("Resources\\gunsettings.new"))
-	{
-		MessageBox(NULL, L"Error! gunsettings.new not found.\nCreating a new one with default settings. Click OK to continue", 
-		L"Settings not found", MB_OK|MB_ICONERROR);
-
-		//create/open file
-		std::ofstream file("Resources\\gunsettings.new");
-
-		//save default weapon configurations to file
-		char weaponinfo[240];
-		sprintf_s(weaponinfo, "%.4f %.4f %.4f\n%.2f", 1.0f, -1.0f, 2.0f, 550.0f);
-		file << weaponinfo;
-
-		//close file
-		file.close();
-
-	}
-
-	std::ifstream fin("Resources\\gunsettings.new");
-
-	fin >> mWeaponSettings.x >> mWeaponSettings.y >> mWeaponSettings.z;
-	fin >> mWeaponSettings.RotationY;
-
-	fin.close();
 
 	AnimationIndex = 0;
 
@@ -65,25 +41,10 @@ Weapon::Weapon(std::string path)
 	info.Material = DefaultMat;
 	info.Mgr = &d3d->m_TextureMgr;
 	info.UseDefaultMaterial = false;
-<<<<<<< HEAD
 
 	//using only diffuse map will save the memory but will affect the
 	//quality
 	mWeaponModel = new SkinnedModel(path, info, false);
-=======
-	info.AlphaClip = false;
-	info.BackfaceCulling = true;
-	info.AlphaToCoverage = false;
-	info.InstanceFrustumCulling = true;
-	info.UseNormalsFromModel = true;
-	info.Scale = XMFLOAT3(0.085f, 0.085f, 0.085f);
-	info.technique = Effects::NormalMapFX->Light1PointLight0TexAOSpecTech;
-
-
-	//using only diffuse map will save the memory but will affect the
-	//quality
-	mWeaponModel = new Model(path, info, false, true, true, true, false);
->>>>>>> a9c11a661a28e1282702d16138bb6c56491de5b9
 
 }
 
@@ -103,11 +64,7 @@ void Weapon::Render()
 	static float y = mWeaponSettings.y;
 	static float z = mWeaponSettings.z;
 
-<<<<<<< HEAD
 #if defined(DEBUG) || defined(_DEBUG)
-=======
-#if defined(DEBUG) || (_DEBUG)
->>>>>>> a9c11a661a28e1282702d16138bb6c56491de5b9
 
 	if (GetAsyncKeyState('N')&1)
 		--degree;
@@ -135,7 +92,6 @@ void Weapon::Render()
 	pos.y = 40;
 
 	wchar_t wchar[200]; 
-<<<<<<< HEAD
 
 	wsprintf(wchar, L"\nWeaponInfo:\n\nX: %d Y : %d Z : %d\nRotation : %d Degree", (int)x, (int)y, (int)z, (int)degree);
 
@@ -163,34 +119,6 @@ void Weapon::Render()
 
 	XMMATRIX WeaponWorld =  Scaling * Rotation * Translation * CameraWorld;
 
-=======
-
-	wsprintf(wchar, L"\nWeaponInfo:\n\nX: %d Y : %d Z : %d\nRotation : %d Degree", (int)x, (int)y, (int)z, (int)degree);
-
-	if (GetAsyncKeyState('H')&1)
-	{
-		//create/open file
-		std::ofstream file("Resources\\gunsettings.new");
-
-		//save current weapon configurations to file
-		char weaponinfo[400];
-		sprintf_s(weaponinfo, "%.4f %.4f %.4f\n%.2f", x, y, z, degree);
-		file << weaponinfo;
-
-		//close file
-		file.close();
-	}
-
-	d3d->DrawString(pos, wchar);
-#endif
-
-	
-	XMMATRIX Rotation = XMMatrixRotationY(XMConvertToRadians(degree));
-	XMMATRIX Translation =  XMMatrixTranslation(x, y, z);
-
-	WeaponWorld =  Rotation * Translation * CameraWorld;
-
->>>>>>> a9c11a661a28e1282702d16138bb6c56491de5b9
 	//weapon is always infront of camera so we don't need to check for its visibility
 	INT status = 2; 
 
