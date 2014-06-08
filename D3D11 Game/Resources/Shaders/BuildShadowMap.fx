@@ -52,12 +52,35 @@ struct VertexOut
 	float4 PosH : SV_POSITION;
 	float2 Tex  : TEXCOORD;
 };
+
+
+struct InstancedVertexIn
+{
+	float3 PosL     : POSITION;
+	float3 NormalL  : NORMAL;
+	float2 Tex      : TEXCOORD;
+	row_major float4x4 World  : WORLD;
+	uint InstanceId : SV_InstanceID;
+};
  
 VertexOut VS(VertexIn vin)
 {
 	VertexOut vout;
 
 	vout.PosH = mul(float4(vin.PosL, 1.0f), gWorldViewProj);
+	vout.Tex  = mul(float4(vin.Tex, 0.0f, 1.0f), gTexTransform).xy;
+
+	return vout;
+}
+
+VertexOut INSTANCED_VS(InstancedVertexIn vin)
+{
+	VertexOut vout;
+
+	float3 PosW  = mul(float4(vin.PosL, 1.0f), vin.World).xyz;
+
+	vout.PosH = mul(float4(PosW, 1.0f), gViewProj);
+	
 	vout.Tex  = mul(float4(vin.Tex, 0.0f, 1.0f), gTexTransform).xy;
 
 	return vout;
@@ -244,11 +267,33 @@ technique11 BuildShadowMapTech
     }
 }
 
+technique11 BuildShadowMapInstancedTech
+{
+    pass P0
+    {
+        SetVertexShader( CompileShader( vs_4_0, INSTANCED_VS() ) );
+        SetGeometryShader( NULL );
+        SetPixelShader( NULL );
+
+		SetRasterizerState(Depth);
+    }
+}
+
 technique11 BuildShadowMapAlphaClipTech
 {
     pass P0
     {
         SetVertexShader( CompileShader( vs_4_0, VS() ) );
+        SetGeometryShader( NULL );
+        SetPixelShader( CompileShader( ps_4_0, PS() ) );
+    }
+}
+
+technique11 BuildShadowMapAlphaClipInstancedTech
+{
+    pass P0
+    {
+        SetVertexShader( CompileShader( vs_4_0, INSTANCED_VS() ) );
         SetGeometryShader( NULL );
         SetPixelShader( CompileShader( ps_4_0, PS() ) );
     }

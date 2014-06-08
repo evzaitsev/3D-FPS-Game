@@ -21,6 +21,11 @@ cbuffer cbSkinned
 	float4x4 gBoneTransforms[96];
 };
 
+cbuffer cbFixed
+{
+	static const int NUM_INFLUENCE_PER_VERTEX = 4;
+};
+
 cbuffer cbPerObject
 {
 	float4x4 gWorld;
@@ -73,7 +78,7 @@ struct SkinnedVertexIn
 	float3 NormalL    : NORMAL;
 	float2 Tex        : TEXCOORD;
 	float4 TangentL   : TANGENT;
-	float2 Weights    : WEIGHTS;
+	float4 Weights    : WEIGHTS;
 	uint4 BoneIndices : BONEINDICES;
 };
 
@@ -144,18 +149,19 @@ VertexOut SKINNED_VS(SkinnedVertexIn vin)
     VertexOut vout;
 
 	// Init array or else we get strange warnings about SV_POSITION.
-	float weights[2] = {0.0f, 0.0f};
+	float weights[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+
 	weights[0] = vin.Weights.x;
 	weights[1] = vin.Weights.y;
+	weights[2] = vin.Weights.z;
+	weights[3] = vin.Weights.w;
 
-	//weights[1] = vin.Weights.y;
-	//weights[2] = vin.Weights.z;
-	//weights[3] = 1.0f - weights[0] - weights[1] - weights[2];
 
 	float3 posL     = float3(0.0f, 0.0f, 0.0f);
 	float3 normalL  = float3(0.0f, 0.0f, 0.0f);
 	float3 tangentL = float3(0.0f, 0.0f, 0.0f);
-	for(int i = 0; i < 2; ++i)
+
+	for(int i = 0; i < NUM_INFLUENCE_PER_VERTEX; ++i)
 	{
 	    // Assume no nonuniform scaling when transforming normals, so 
 		// that we do not have to use the inverse-transpose.
