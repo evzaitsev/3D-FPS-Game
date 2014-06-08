@@ -656,7 +656,7 @@ void Direct3D::UpdateScene(float dt)
 	if( GetAsyncKeyState('D') & 0x8000 )
 		m_Cam.Strafe(10.0f * dt * speed);
 
-	m_Cam.SetPosition(trans.getOrigin().getX(), trans.getOrigin().getY(), trans.getOrigin().getZ());
+	//m_Cam.SetPosition(trans.getOrigin().getX(), trans.getOrigin().getY(), trans.getOrigin().getZ());
 
 #ifdef USE_FREE_CAMERA_KEY
 	if( GetAsyncKeyState('P') & 1 )
@@ -1235,7 +1235,6 @@ void Direct3D::OnMouseMove(WPARAM btnState, int x, int y)
 		m_Cam.RotateY(dx);
 	}
 
-
 	m_LastMousePos.x = x;
 	m_LastMousePos.y = y;
 }
@@ -1442,4 +1441,10 @@ LRESULT CALLBACK Direct3D::MsgProc(HWND& hWnd, UINT& msg, WPARAM& wParam, LPARAM
 	}
 	
 	return 0;
+}
+
+void Direct3D::GetScreenResolution(UINT& Width, UINT& Height)
+{
+	Width = m_Width;
+	Height = m_Height;
 }

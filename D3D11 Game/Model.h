@@ -177,11 +177,11 @@ public:
 	std::vector<XMFLOAT3> vertices;
 	std::vector<XNA::AxisAlignedBox> AABB;
 
-	//for bullet physics
+	//for bullet physics and picking
 	//can delete whenever not required to save memory
 	int* Indices;
 public:
-	//Bullet physics requires you to feed indices to it
+	//Bullet physics requires you to feed indices to it and picking also requires it
 	//Set FillIndices to true if you need Indices or false if you don't
 	Model(const std::string& filename, 
 		InitInfo& info, bool Use32bitFormat, bool NormalMapped, bool HasAOMap, bool HasSpecularMap, bool FillIndices);
@@ -214,6 +214,10 @@ public:
 	void SetModelVisibleStatus(INT &status);
 
 	void SetDirLight(DirectionalLight DirLight[3]);
+
+	//returns picked triangle
+	//-1 means nothing got picked
+	int Pick(int sx, int sy, CXMMATRIX World, XNA::AxisAlignedBox& box);
 
 	void EnableSSAO(bool Enable);
 

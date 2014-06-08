@@ -103,6 +103,8 @@ public:
 	LRESULT CALLBACK MsgProc(HWND& hWnd, UINT& msg, WPARAM& wParam, LPARAM& lParam);
 	BOOL WINAPI Run(HINSTANCE& hInstance);
 
+	void GetScreenResolution(UINT& Width, UINT& Height);
+
 	Direct3D(int Width, int Height, bool FullScreen, bool EnableMultiSample);
 	Direct3D(int Width, int Height);
 	Direct3D(); 

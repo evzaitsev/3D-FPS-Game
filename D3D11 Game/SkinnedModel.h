@@ -99,7 +99,7 @@ struct SkinnedModelInstance
 	{
 		SkinnedModel->mSceneAnimator.AdjustAnimationSpeedTo(TicksPerSecond);
 	}
-	
+
 
 	void DoubleSpeed()
 	{

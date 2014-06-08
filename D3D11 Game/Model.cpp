@@ -1575,6 +1575,78 @@ UINT Model::GetNumDrawCalls()
 	return mDrawCalls;
 }
 
+int Model::Pick(int sx, int sy, CXMMATRIX World, XNA::AxisAlignedBox& box)
+{
+	XMMATRIX P = d3d->m_Cam.Proj();
+
+	UINT Width, Height;
+
+	d3d->GetScreenResolution(Width, Height);
+
+	// Compute picking ray in view space.
+	float vx = (+2.0f*sx/Width  - 1.0f)/P(0,0);
+	float vy = (-2.0f*sy/Height + 1.0f)/P(1,1);
+
+	// Ray definition in view space.
+	XMVECTOR rayOrigin = XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
+	XMVECTOR rayDir    = XMVectorSet(vx, vy, 1.0f, 0.0f);
+
+	// Tranform ray to local space of Mesh.
+	XMMATRIX V = d3d->m_Cam.View();
+	XMMATRIX invView = XMMatrixInverse(&XMMatrixDeterminant(V), V);
+
+	XMMATRIX W = World;
+	XMMATRIX invWorld = XMMatrixInverse(&XMMatrixDeterminant(W), W);
+
+	XMMATRIX toLocal = XMMatrixMultiply(invView, invWorld);
+
+	rayOrigin = XMVector3TransformCoord(rayOrigin, toLocal);
+	rayDir = XMVector3TransformNormal(rayDir, toLocal);
+
+	// Make the ray direction unit length for the intersection tests.
+	rayDir = XMVector3Normalize(rayDir);
+
+	// If we hit the bounding box of the Mesh, then we might have picked a Mesh triangle,
+	// so do the ray/triangle tests.
+	//
+	// If we did not hit the bounding box, then it is impossible that we hit 
+	// the Mesh, so do not waste effort doing ray/triangle tests.
+
+	// Assume we have not picked anything yet, so init to -1.
+	int PickedTriangle = -1;
+	float tmin = 0.0f;
+	if(XNA::IntersectRayAxisAlignedBox(rayOrigin, rayDir, &box, &tmin))
+	{
+		// Find the nearest ray/triangle intersection.
+		tmin = MathHelper::Infinity;
+		for(UINT i = 0; i < mModel.mNumFaces; ++i)
+		{
+			// Indices for this triangle.
+			UINT i0 = Indices[i*3+0];
+			UINT i1 = Indices[i*3+1];
+			UINT i2 = Indices[i*3+2];
+
+			// Vertices for this triangle.
+			XMVECTOR v0 = XMLoadFloat3(&vertices[i0]);
+			XMVECTOR v1 = XMLoadFloat3(&vertices[i1]);
+			XMVECTOR v2 = XMLoadFloat3(&vertices[i2]);
+
+			// We have to iterate over all the triangles in order to find the nearest intersection.
+			float t = 0.0f;
+			if(XNA::IntersectRayTriangle(rayOrigin, rayDir, v0, v1, v2, &t))
+			{
+				if( t < tmin )
+				{
+					// This is the new nearest picked triangle.
+					tmin = t;
+					PickedTriangle = i;
+				}
+			}
+		}
+	}
+
+	return PickedTriangle;
+}
 
 MeshGeometry::MeshGeometry()
 {
