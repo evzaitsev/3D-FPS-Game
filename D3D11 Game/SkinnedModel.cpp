@@ -3,13 +3,16 @@
 //=================================================
 // Assimp Skinned Model Loader by newtechnology
 // This Assimp Skinned Model Loader uses Scot lee's animation code for loading skinned models
-// Status : Being developed (not completed)
+// Status : On the stage of improvement
+// Updates :
+// *Added SkinnedModelInstance class to draw a single model multiple times
+// *Added Support for Skinned Models who require 32 Bit Indices
 //=================================================
 
-SkinnedModel::SkinnedModel(const std::string& modelpath, InitInfo& info)
+SkinnedModel::SkinnedModel(const std::string& modelpath, InitInfo& info, bool Use32BitIndexFormat)
 {
 	mInfo = info;
-
+	
 	
 	Lights[0].Ambient  = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
 	Lights[0].Diffuse  = XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f);
@@ -46,8 +49,7 @@ SkinnedModel::SkinnedModel(const std::string& modelpath, InitInfo& info)
 	PointLights[2].Att   = XMFLOAT3(0.0f, 0.1f, 0.0f);
 	PointLights[2].Position = pos[2];
 
-	LoadSkinnedModel16(modelpath);
-
+	LoadSkinnedModel(modelpath, Use32BitIndexFormat);
 }
 
 SkinnedModel::~SkinnedModel()
@@ -137,7 +139,7 @@ void SkinnedModel::LoadTextures(aiMaterial* Mat)
 
 	NormalMapTexturePath = "Resources\\Textures\\" + NormalMapTexturePath;
 
-#if defined(DEBUG) || (_DEBUG)
+#if defined(DEBUG) || defined(_DEBUG)
 	if (!FileExists(NormalMapTexturePath))
 		ShowError("A Normal map is missing.");
 #endif
@@ -146,15 +148,19 @@ void SkinnedModel::LoadTextures(aiMaterial* Mat)
 	NormalMapSRV.push_back(srv);
 }
 
-void SkinnedModel::LoadSkinnedModel16(const std::string& path)
+
+void SkinnedModel::LoadSkinnedModel(const std::string& path, bool& Use32BitFormat)
 {
 	Assimp::Importer imp;
 
-	std::vector<Vertex::PosNormalTexTanSkinned> vertices;
-	std::vector<USHORT> indices;
+	std::vector<Vertex::PosNormalTexTanSkinned> temp_vertices;
+	std::vector<USHORT> Indices_16Bit;
+	std::vector<UINT>   Indices_32Bit;
 	std::vector<Subset> Subsets;
-
-	const aiScene* pScene = imp.ReadFile(path, aiProcessPreset_TargetRealtime_Quality | aiProcess_ConvertToLeftHanded );
+	
+	const aiScene* pScene = imp.ReadFile(path, 
+		aiProcessPreset_TargetRealtime_Quality |
+		aiProcess_ConvertToLeftHanded );
 	
 	if (pScene == NULL)
 		ShowError(imp.GetErrorString());
@@ -162,9 +168,13 @@ void SkinnedModel::LoadSkinnedModel16(const std::string& path)
 	if (mInfo.Mgr == nullptr)
 		ShowError("No Address found in pointer mInfo::Mgr");
 
+	if (!pScene->HasAnimations())
+		ShowError("Model does have animations.");
+
+	OutputDebugStringA(imp.GetErrorString());
+
 	mSceneAnimator.Init(pScene);
 
-	
 	for (UINT i = 0; i < pScene->mNumMeshes; ++i)
 	{
 		aiMesh* mesh = pScene->mMeshes[i];
@@ -173,15 +183,18 @@ void SkinnedModel::LoadSkinnedModel16(const std::string& path)
 
 		subset.VertexCount = mesh->mNumVertices;
 		subset.VertexStart = vertices.size();
-		subset.FaceStart = indices.size() / 3;
 		subset.FaceCount = mesh->mNumFaces;
 		subset.ID = mesh->mMaterialIndex;
+
+		if (Use32BitFormat)
+			subset.FaceStart = Indices_32Bit.size() / 3;
+		else
+			subset.FaceStart = Indices_16Bit.size() / 3;
 
 		mModel.mNumFaces += subset.FaceCount;
 		mModel.mNumVertices += subset.VertexCount;
 
 		std::vector<std::vector<aiVertexWeight> > weightsPerVertex(mesh->mNumVertices);
-
 
 		for (UINT b = 0; b < mesh->mNumBones; ++b)
 		{
@@ -209,6 +222,9 @@ void SkinnedModel::LoadSkinnedModel16(const std::string& path)
 			vertex.Normal.x = mesh->mNormals[j].x;
 			vertex.Normal.y = mesh->mNormals[j].y;
 			vertex.Normal.z = mesh->mNormals[j].z;
+
+			if (!mesh->HasBones())
+				ShowError("Mesh does not have bones.");
 
 
 			if (mesh->HasTextureCoords(0))
@@ -238,19 +254,31 @@ void SkinnedModel::LoadSkinnedModel16(const std::string& path)
 				weights[w] = weightsPerVertex[j][w].mWeight;
 			}
 
+			
+#if defined(DEBUG) || defined(_DEBUG)
+			float TotalWeight = weights[0] + weights[1] + weights[2] + weights[3];
+
+			char t[100];
+			sprintf_s(t, "TotalWeight : %.2f\n", TotalWeight);
+			OutputDebugStringA(t);
+#endif
+
 			vertex.Weights.x = weights[0];
 			vertex.Weights.y = weights[1];
 			vertex.Weights.z = weights[2];
 			vertex.Weights.w = weights[3];
 
-			vertices.push_back(vertex);
+			temp_vertices.push_back(vertex);
 		}
 
 		for (UINT j = 0; j < subset.FaceCount; ++j)
 		{
 			for (UINT index = 0; index < mesh->mFaces[j].mNumIndices; ++index)
 			{
-				indices.push_back(subset.VertexStart + mesh->mFaces[j].mIndices[index]);
+				if (Use32BitFormat)
+				    Indices_32Bit.push_back(subset.VertexStart + mesh->mFaces[j].mIndices[index]);
+				else
+				    Indices_16Bit.push_back(subset.VertexStart + mesh->mFaces[j].mIndices[index]);
 			}
 		}
 
@@ -270,17 +298,48 @@ void SkinnedModel::LoadSkinnedModel16(const std::string& path)
 		Subsets.push_back(subset);
 	}
 
+	vertices.resize(temp_vertices.size());
+
+	//Store Scaled vertices or we will get wrong bounding box
+	//NOTE: Scale vector should match the x, y, z components with scaling matrix
+	XMVECTOR ScaleVector = XMLoadFloat3(&mInfo.Scale);
+
+	for (UINT i = 0; i < temp_vertices.size(); ++i)
+	{
+		vertices[i] = temp_vertices[i].Pos;
+
+		XMVECTOR VertexPos = XMLoadFloat3(&vertices[i]);
+
+		VertexPos *= ScaleVector;
+
+		XMStoreFloat3(&vertices[i], VertexPos);
+	}
+
 	mModel.mSubsetCount = Subsets.size();
 
 	mModel.Mesh.SetSubsetTable(Subsets);
-	mModel.Mesh.SetVertices(&vertices[0], vertices.size());
-	mModel.Mesh.SetIndices(&indices[0], indices.size());
+	mModel.Mesh.SetVertices(&temp_vertices[0], temp_vertices.size());
+	
+	if (Use32BitFormat)
+	{
+		mModel.Mesh.SetIndices(&Indices_32Bit[0], Indices_32Bit.size());
+		mModel.Mesh.SetFormat(DXGI_FORMAT_R32_UINT);
+	}
+	else
+	{
+		mModel.Mesh.SetIndices(&Indices_16Bit[0], Indices_16Bit.size());
+		mModel.Mesh.SetFormat(DXGI_FORMAT_R16_UINT);
+	}
 	
 }
 
 
 void SkinnedModel::Render(CXMMATRIX World, CXMMATRIX ViewProj)
 {
+	//responsibilty of user to pass correct status
+	//SkinnedModel class does not handle frustum culling
+	if (mModelVisibleStatus == OUTSIDE)
+		return;
 
 	ID3DX11EffectTechnique* activeTech = Effects::NormalMapFX->Light1TexSkinnedTech;
 
@@ -306,7 +365,6 @@ void SkinnedModel::Render(CXMMATRIX World, CXMMATRIX ViewProj)
 	Effects::NormalMapFX->SetShadowTransform(ShadowTransform);
 	Effects::NormalMapFX->SetBoneTransforms(&FinalTransforms[0], FinalTransforms.size());	
 	
-
 	D3DX11_TECHNIQUE_DESC techDesc;
     activeTech->GetDesc(&techDesc);
 
@@ -333,15 +391,9 @@ void SkinnedModel::Render(CXMMATRIX World, CXMMATRIX ViewProj)
 
 }
 
-void SkinnedModel::Update(float dt)
+
+void SkinnedModel::SetModelVisibleStatus(XNA::FrustumIntersection status)
 {
-	TimePos += dt;
-
-	mSceneAnimator.SetAnimIndex(0);
-
-	FinalTransforms = mSceneAnimator.GetTransforms(TimePos);
-
-	if (TimePos > mSceneAnimator.Animations[0].Duration)
-		TimePos = 0.0f;
-
+	mModelVisibleStatus = status;
 }
+

@@ -8,7 +8,7 @@
 #define DEBUG
 
 
-#if defined(DEBUG) || (_DEBUG)
+#if defined(DEBUG) || defined(_DEBUG)
 
 #define USE_FREE_CAMERA_KEY
 #define ALLOW_FRAME_PAUSE_KEY

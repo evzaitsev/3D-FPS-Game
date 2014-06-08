@@ -291,7 +291,7 @@ void Model::LoadTextures(aiMaterial* Mat, bool& AOMap, bool NormalMap, bool& Spe
 	SpecularMapTexturePath = "Resources\\Textures\\" + SpecularMapTexturePath;
 
 
-#if defined(DEBUG) || (_DEBUG)
+#if defined(DEBUG) || defined(_DEBUG)
 	OutputDebugStringA(NormalMapTexturePath.c_str());
 	OutputDebugStringA("\n");
 	OutputDebugStringA(AmbientOcclusionMapTexturePath.c_str());
@@ -1053,14 +1053,14 @@ void Model::RenderInstancedShadowMap(CXMMATRIX World, CXMMATRIX ViewProj)
 
 	XMMATRIX W = World;
 
-	Effects::BuildShadowMapInstancedFX->SetEyePosW(d3d->m_Cam.GetPosition());
+	Effects::BuildShadowMapFX->SetEyePosW(d3d->m_Cam.GetPosition());
 
 	ID3DX11EffectTechnique* Tech;
 
 	if (mInfo.AlphaClip)
-		Tech = Effects::BuildShadowMapInstancedFX->BuildShadowMapAlphaClipTech;
+		Tech = Effects::BuildShadowMapFX->BuildShadowMapInstancedTech;
 	else
-		Tech = Effects::BuildShadowMapInstancedFX->BuildShadowMapTech;
+		Tech = Effects::BuildShadowMapFX->BuildShadowMapAlphaClipInstancedTech;
 
 	UINT stride[2] = {sizeof(Vertex::Basic32), sizeof(InstancedData)};
     UINT offset[2] = {0,0};
@@ -1083,12 +1083,12 @@ void Model::RenderInstancedShadowMap(CXMMATRIX World, CXMMATRIX ViewProj)
 			XMMATRIX worldInvTranspose = MathHelper::InverseTranspose(W);
 		    XMMATRIX TexTransform = XMMatrixIdentity();
 
-		    Effects::BuildShadowMapInstancedFX->SetWorld(W);
-			Effects::BuildShadowMapInstancedFX->SetViewProj(ViewProj);
-		    Effects::BuildShadowMapInstancedFX->SetWorldInvTranspose(worldInvTranspose);
-	        Effects::BuildShadowMapInstancedFX->SetTexTransform(TexTransform);
+		    Effects::BuildShadowMapFX->SetWorld(W);
+			Effects::BuildShadowMapFX->SetViewProj(ViewProj);
+		    Effects::BuildShadowMapFX->SetWorldInvTranspose(worldInvTranspose);
+	        Effects::BuildShadowMapFX->SetTexTransform(TexTransform);
 
-			Effects::BuildShadowMapInstancedFX->SetDiffuseMap(DiffuseMapSRV[i]);
+			Effects::BuildShadowMapFX->SetDiffuseMap(DiffuseMapSRV[i]);
 
 			Tech->GetPassByIndex(p)->Apply(0, pDeviceContext);
 

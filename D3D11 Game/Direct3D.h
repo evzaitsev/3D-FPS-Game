@@ -40,10 +40,6 @@ private:
 	ID3D11Buffer* mScreenQuadVB;
 	ID3D11Buffer* mScreenQuadIB;
 
-
-	ID3D11Buffer* mFullScreenQuadVB;
-	ID3D11Buffer* mFullScreenQuadIB;
-
 	static const int SMapSize = 1024;
 
 #ifdef _USE_DEFERRED_SHADING_
@@ -51,6 +47,7 @@ private:
 #endif
 
 	std::vector<ModelInstance> ModelInstances;  
+	std::vector<SkinnedModelInstance> SkinnedModelInstances;
 
 	btTriangleIndexVertexArray*  m_indexVertexArrays;
 	btBroadphaseInterface* m_broadphase;
@@ -75,7 +72,7 @@ public:
 	ShadowMap* m_Smap;
 	//Ssao* m_Ssao;
 	TextureMgr m_TextureMgr;
-	Terrain m_Land;
+
 
 private:
 	void UpdateInstancedModelsData();
@@ -97,7 +94,7 @@ private:
 
 	void RenderToShadowMap();
 
-#if defined(DEBUG) || (_DEBUG)
+#if defined(DEBUG) || defined(_DEBUG)
 	void DrawScreenQuad();
 #endif
 
@@ -121,8 +118,8 @@ public:
 
 	void DrawString(POINT pos, std::wstring string);
 
-	INT IntersectAABBFrustum(XNA::AxisAlignedBox* box, CXMMATRIX world);
-	INT IntersectSphereFrustum(XNA::Sphere* box, CXMMATRIX world);
+	XNA::FrustumIntersection IntersectAABBFrustum(XNA::AxisAlignedBox* box, CXMMATRIX world);
+	XNA::FrustumIntersection IntersectSphereFrustum(XNA::Sphere* box, CXMMATRIX world);
 
 	AxisAlignedBox MergeAABBs(AxisAlignedBox& box0, AxisAlignedBox& box1);
 

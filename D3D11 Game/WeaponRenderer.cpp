@@ -2,6 +2,9 @@
 
 Weapon::Weapon(std::string path)
 {
+
+	AnimationIndex = 0;
+
 	if (!FileExists("Resources\\gunsettings.new"))
 	{
 		MessageBox(NULL, L"Error! gunsettings.new not found.\nCreating a new one with default settings. Click OK to continue", 
@@ -33,23 +36,15 @@ Weapon::Weapon(std::string path)
 	DefaultMat.Diffuse = XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f);
 	DefaultMat.Specular = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
 
-	Model::InitInfo info;
+	SkinnedModel::InitInfo info;
 
 	info.Material = DefaultMat;
 	info.Mgr = &d3d->m_TextureMgr;
 	info.UseDefaultMaterial = false;
-	info.AlphaClip = false;
-	info.BackfaceCulling = true;
-	info.AlphaToCoverage = false;
-	info.InstanceFrustumCulling = true;
-	info.UseNormalsFromModel = true;
-	info.Scale = XMFLOAT3(0.085f, 0.085f, 0.085f);
-	info.technique = Effects::NormalMapFX->Light1PointLight0TexAOSpecTech;
-
 
 	//using only diffuse map will save the memory but will affect the
 	//quality
-	mWeaponModel = new Model(path, info, false, true, true, true, false);
+	mWeaponModel = new SkinnedModel(path, info, false);
 
 }
 
@@ -60,7 +55,6 @@ Weapon::~Weapon()
 
 void Weapon::Render()
 {
-	XMMATRIX WeaponWorld = XMMatrixIdentity();
 	XMMATRIX ViewMatrix  = d3d->m_Cam.View();
 	XMMATRIX CameraWorld = XMMatrixInverse(&XMMatrixDeterminant(ViewMatrix), ViewMatrix);
 	XMMATRIX ViewProj = d3d->m_Cam.ViewProj();
@@ -70,7 +64,7 @@ void Weapon::Render()
 	static float y = mWeaponSettings.y;
 	static float z = mWeaponSettings.z;
 
-#if defined(DEBUG) || (_DEBUG)
+#if defined(DEBUG) || defined(_DEBUG)
 
 	if (GetAsyncKeyState('N')&1)
 		--degree;
@@ -121,14 +115,49 @@ void Weapon::Render()
 	
 	XMMATRIX Rotation = XMMatrixRotationY(XMConvertToRadians(degree));
 	XMMATRIX Translation =  XMMatrixTranslation(x, y, z);
+	XMMATRIX Scaling = XMMatrixScaling(0.085f, 0.085f, 0.085f);
 
-	WeaponWorld =  Rotation * Translation * CameraWorld;
+	XMMATRIX WeaponWorld =  Scaling * Rotation * Translation * CameraWorld;
 
 	//weapon is always infront of camera so we don't need to check for its visibility
 	INT status = 2; 
 
-	mWeaponModel->SetModelVisibleStatus(status);
-	mWeaponModel->Update(WeaponWorld);
 	mWeaponModel->Render(WeaponWorld, ViewProj);
 
+}
+
+
+void Weapon::Update(float dt)
+{
+	static bool Reload = false;
+	static bool FirstTime = true;
+
+	if (GetAsyncKeyState('R')&1)
+	{
+		Reload = true;
+	}
+
+	if (FirstTime)
+	{
+		FinalTransforms = mWeaponModel->mSceneAnimator.GetTransforms(0);
+
+		FirstTime = false;
+	}
+
+	if (!Reload)
+		return;
+
+	TimePos += dt;
+
+	mWeaponModel->mSceneAnimator.SetAnimIndex(AnimationIndex);
+
+    int index = mWeaponModel->mSceneAnimator.GetAnimationIndex();
+
+	mWeaponModel->FinalTransforms = mWeaponModel->mSceneAnimator.GetTransforms(TimePos);
+
+	if (TimePos > mWeaponModel->mSceneAnimator.Animations[index].Duration)
+	{
+		TimePos = 0.0f;
+		Reload = false;
+	}
 }

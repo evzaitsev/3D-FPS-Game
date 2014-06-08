@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "cAnimationController.h"
 
-void TransformMatrix(mat4& out, const aiMatrix4x4& in)
-{ // there is some type of alignment issue with my mat4 and the aimatrix4x4 class, so the copy must be manually
+const float NumFrames = 45.0f;
+
+void TransformMatrix(mat4& out,const aiMatrix4x4& in){// there is some type of alignment issue with my mat4 and the aimatrix4x4 class, so the copy must be manually
 	out._11=in.a1;
 	out._12=in.a2;
 	out._13=in.a3;
@@ -151,7 +151,7 @@ void cAnimEvaluator::Evaluate( float pTime, std::map<std::string, cBone*>& bones
 		std::map<std::string, cBone*>::iterator bonenode = bones.find(channel->Name);
 
 		if(bonenode == bones.end()) { 
-			MessageBox(0, L"Did not find the bone node", 0, 0);
+			MessageBox(0, L"Did not find bone node", 0, 0);
 			continue;
 		}
 
@@ -266,28 +266,25 @@ void SceneAnimator::Init(const aiScene* pScene){// this will build the skeleton 
 				}
 				if(!skip){// only insert the bone if it has not already been inserted
 					std::string tes = found->second->Name;
-
 					TransformMatrix(found->second->Offset, bone->mOffsetMatrix);
 
-					//found->second->Offset.Transpose();// transpoce their matrix to get in the correct format
-					XMMATRIX M = XMLoadFloat4x4(&found->second->Offset);
-					M = XMMatrixTranspose(M);
+					XMMATRIX matrix = XMLoadFloat4x4(&found->second->Offset);
+					matrix = XMMatrixTranspose(matrix);
 
-					XMStoreFloat4x4(&found->second->Offset, M);
+					XMStoreFloat4x4(&found->second->Offset, matrix);
 
 					Bones.push_back(found->second);
-
 					BonesToIndex[found->first] = Bones.size()-1;
 				}
 			} 
 		}
 	}
 	Transforms.resize( Bones.size());
-	float timestep = 1.0f/30.0f;// 30 per second
+	float timestep = 1.0f/NumFrames;// 30 per second
 	for(size_t i(0); i< Animations.size(); i++){// pre calculate the animations
 		SetAnimIndex(i);
 		float dt = 0;
-		for(float ticks = 0; ticks < Animations[i].Duration; ticks += Animations[i].TicksPerSecond/30.0f){
+		for(float ticks = 0; ticks < Animations[i].Duration; ticks += Animations[i].TicksPerSecond/NumFrames){
 			dt +=timestep;
 			Calculate(dt);
 			Animations[i].Transforms.push_back(std::vector<mat4>());
@@ -301,7 +298,9 @@ void SceneAnimator::Init(const aiScene* pScene){// this will build the skeleton 
 		}
 	}
 	
-	MessageBox(0, L"Finished loading animation", 0, 0);
+	char t[100];
+	sprintf_s(t, "Finished loading animation with %d bones", Bones.size());
+	MessageBoxA(0, t, 0, 0);
 }
 void SceneAnimator::Save(std::ofstream& file){
 	// first recursivly save the skeleton
@@ -353,11 +352,11 @@ void SceneAnimator::Load(std::ifstream& file){
 	}
 	
 	Transforms.resize( Bones.size());
-	float timestep = 1.0f/30.0f;// 30 per second
+	float timestep = 1.0f/NumFrames;// 30 per second
 	for(size_t i(0); i< Animations.size(); i++){// pre calculate the animations
 		SetAnimIndex(i);
 		float dt = 0;
-		for(float ticks = 0; ticks < Animations[i].Duration; ticks += Animations[i].TicksPerSecond/30.0f){
+		for(float ticks = 0; ticks < Animations[i].Duration; ticks += Animations[i].TicksPerSecond/NumFrames){
 			dt +=timestep;
 			Calculate(dt);
 			Animations[i].Transforms.push_back(std::vector<mat4>());
@@ -405,6 +404,7 @@ void SceneAnimator::Calculate(float pTime){
 	Animations[CurrentAnimIndex].Evaluate( pTime, BonesByName);
 	UpdateTransforms(Skeleton);
 }
+
 /*
 void UQTtoUDQ(vec4* dual, quat q, vec4& tran ) {
     dual[0].x = q.x ; 
@@ -416,14 +416,12 @@ void UQTtoUDQ(vec4* dual, quat q, vec4& tran ) {
     dual[1].z = 0.5f *  ( tran[0] * q.y - tran[1] * q.x + tran[2] * q.w ) ; 
     dual[1].w = -0.5f * ( tran[0] * q.x + tran[1] * q.y + tran[2] * q.z ) ; 
 }
-*/
+
 // ------------------------------------------------------------------------------------------------
 // Calculates the bone matrices for the given mesh. 
 void SceneAnimator::CalcBoneMatrices(){
 	for( size_t a = 0; a < Transforms.size(); ++a){
-
-		XMMATRIX M =  XMLoadFloat4x4(&Bones[a]->Offset) * XMLoadFloat4x4(&Bones[a]->GlobalTransform);
-		XMStoreFloat4x4(&Transforms[a], M);
+		Transforms[a] =  Bones[a]->Offset * Bones[a]->GlobalTransform;
 		/*
 		mat4 rotationmat = Transforms[a];
 		quat q;
@@ -433,10 +431,11 @@ void SceneAnimator::CalcBoneMatrices(){
 		UQTtoUDQ( dual, q, Transforms[a].row3_v);
 		QuatTransforms[a].row0_v =dual[0];
 		QuatTransforms[a].row1_v =dual[1];
-		*/
+		
 	}
 
 }
+*/
 
 // ------------------------------------------------------------------------------------------------
 // Recursively creates an internal node structure matching the current scene and animation.
@@ -449,11 +448,10 @@ cBone* SceneAnimator::CreateBoneTree( aiNode* pNode, cBone* pParent){
 	TransformMatrix(internalNode->LocalTransform, pNode->mTransformation);
 
 	//internalNode->LocalTransform.Transpose();
-	
-	XMMATRIX M = XMLoadFloat4x4(&internalNode->LocalTransform);
-	M = XMMatrixTranspose(M);
+	XMMATRIX matrix = XMLoadFloat4x4(&internalNode->LocalTransform);
+	matrix = XMMatrixTranspose(matrix);
 
-	XMStoreFloat4x4(&internalNode->LocalTransform, M);
+	XMStoreFloat4x4(&internalNode->LocalTransform, matrix);
 
 	internalNode->OriginalLocalTransform = internalNode->LocalTransform;// a copy saved
 	CalculateBoneToWorldTransform(internalNode);
@@ -478,21 +476,16 @@ void SceneAnimator::UpdateTransforms(cBone* pNode) {
 void SceneAnimator::CalculateBoneToWorldTransform(cBone* child){
 	child->GlobalTransform = child->LocalTransform;
 	cBone* parent = child->Parent;
-	while( parent )
-	{// this will climb the nodes up along through the parents concentating all the matrices to get the Object to World transform, or in this case, the Bone To World transform
-
+	while( parent ){// this will climb the nodes up along through the parents concentating all the matrices to get the Object to World transform, or in this case, the Bone To World transform
 		//child->GlobalTransform *= parent->LocalTransform;
-		//parent  = parent->Parent;// get the parent of the bone we are working on 
 
-		XMMATRIX Child = XMLoadFloat4x4(&child->GlobalTransform);
-		XMMATRIX Parent = XMLoadFloat4x4(&parent->LocalTransform);
+		XMMATRIX ChildGlobalTransform = XMLoadFloat4x4(&child->GlobalTransform);
 
-		Child *= Parent;
+		ChildGlobalTransform *= XMLoadFloat4x4(&parent->LocalTransform);
 
-		XMStoreFloat4x4(&child->GlobalTransform, Child);
+		XMStoreFloat4x4(&child->GlobalTransform, ChildGlobalTransform);
 
-		parent = parent->Parent;
-		
+		parent = parent->Parent;// get the parent of the bone we are working on 
 	}
 }
 

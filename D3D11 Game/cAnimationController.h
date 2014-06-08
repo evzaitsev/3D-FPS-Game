@@ -6,6 +6,7 @@ typedef XMFLOAT4X4 mat4;
 typedef INT32 int32_t;
 typedef UINT32 uint32_t;
 
+
 class cBone {
 public:
 
