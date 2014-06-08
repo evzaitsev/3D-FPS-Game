@@ -102,8 +102,10 @@ Direct3D::~Direct3D()
 	ReleaseCOM(m_SwapChain);
 	ReleaseCOM(m_DepthStencilBuffer);
 
+#if defined(DEBUG) || defined(_DEBUG)
 	ReleaseCOM(mScreenQuadIB);
 	ReleaseCOM(mScreenQuadVB);
+#endif
 
 	SafeDelete(m_Sky);
 	SafeDelete(m_Smap);
@@ -168,7 +170,7 @@ void Direct3D::InitPhysics()
 
 	  m_groundShape =  new btBvhTriangleMeshShape(m_indexVertexArrays, true, true);//new btStaticPlaneShape(btVector3(0, 1, 0), 1);
 
-	  m_fallShape = new btSphereShape(1);
+	  m_fallShape = new btCapsuleShape(1.0f, 3.0f);
 
       m_groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, -1, 0)));
 
@@ -178,9 +180,8 @@ void Direct3D::InitPhysics()
         
 	  m_dynamicsWorld->addRigidBody(m_groundRigidBody);
 
-
       m_fallMotionState =
-                new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(0,1000,0)));
+                new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(0,1000, 100)));
 
 	  //average weight of a person = 65 kg
       btScalar mass = 65.0f;
@@ -587,11 +588,9 @@ XNA::FrustumIntersection Direct3D::IntersectSphereFrustum(XNA::Sphere* sphere, C
 
 	if (intersect == 0)
 		return OUTSIDE;
-
-	if (intersect == 1)
+	else if (intersect == 1)
 		return INTERSECT;
-
-	if (intersect == 2)
+	else
 		return INSIDE;
 }
 
@@ -617,11 +616,9 @@ XNA::FrustumIntersection Direct3D::IntersectAABBFrustum(XNA::AxisAlignedBox* box
 
 	if (intersect == 0)
 		return OUTSIDE;
-
-	if (intersect == 1)
+	else if (intersect == 1)
 		return INTERSECT;
-
-	if (intersect == 2)
+	else 
 		return INSIDE;
 }
 
@@ -634,7 +631,7 @@ void Direct3D::RestoreRenderTarget()
 
 void Direct3D::UpdateScene(float dt)
 {
-	
+
     m_dynamicsWorld->stepSimulation(1.0f/60.0f, 10.0f);
 
 	btTransform trans;
@@ -646,17 +643,20 @@ void Direct3D::UpdateScene(float dt)
 	if( GetAsyncKeyState('W') & 0x8000 )
 	{
 		m_Cam.Walk(10.0f * dt * speed);
+		m_fallRigidBody->applyCentralForce(btVector3(0, 10, 0));
 	}
 	if( GetAsyncKeyState('S') & 0x8000 )
+	{
 		m_Cam.Walk(-10.0f * dt * speed);
-
+		m_fallRigidBody->setLinearVelocity(btVector3(0, 0, -5));
+	}
 	if( GetAsyncKeyState('A') & 0x8000 )
 		m_Cam.Strafe(-10.0f * dt * speed);
 
 	if( GetAsyncKeyState('D') & 0x8000 )
 		m_Cam.Strafe(10.0f * dt * speed);
 
-	//m_Cam.SetPosition(trans.getOrigin().getX(), trans.getOrigin().getY() + 12.0f, trans.getOrigin().getZ());
+	m_Cam.SetPosition(trans.getOrigin().getX(), trans.getOrigin().getY(), trans.getOrigin().getZ());
 
 #ifdef USE_FREE_CAMERA_KEY
 	if( GetAsyncKeyState('P') & 1 )
@@ -1008,7 +1008,7 @@ void Direct3D::DrawScene()
 
 #endif
 
-	//pDeviceContext->ClearDepthStencilView(m_DepthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
+	pDeviceContext->ClearDepthStencilView(m_DepthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	m_AK47->Render();
 
@@ -1084,7 +1084,7 @@ void Direct3D::DrawScreenQuad()
     }
 }
 
-#endif
+
 
 void Direct3D::BuildScreenQuadGeometryBuffers()
 {
@@ -1137,6 +1137,8 @@ void Direct3D::BuildScreenQuadGeometryBuffers()
 	iinitData.pSysMem = &indices[0];
     HR(pDevice->CreateBuffer(&ibd, &iinitData, &mScreenQuadIB));
 }
+
+#endif
 
 
 void Direct3D::BuildShadowTransform()

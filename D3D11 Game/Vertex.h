@@ -11,11 +11,13 @@ namespace Vertex
 		XMFLOAT2 Tex;
 	};
 
+#if defined(DEBUG) || defined(_DEBUG)
 	struct PosTex
 	{
 		XMFLOAT3 Pos;
 		XMFLOAT2 Tex;
 	};
+#endif
 
 	struct PosNormalTexTan
 	{
@@ -53,7 +55,9 @@ public:
 	static const D3D11_INPUT_ELEMENT_DESC PosNormalTexTan[4];
 	static const D3D11_INPUT_ELEMENT_DESC InstancedBasic32[7];
 	static const D3D11_INPUT_ELEMENT_DESC InstancedPosNormalTexTan[8];
+#if defined(DEBUG) || defined(_DEBUG)
 	static const D3D11_INPUT_ELEMENT_DESC PosTex[2];
+#endif
 	static const D3D11_INPUT_ELEMENT_DESC PosNormalTexTanSkinned[6];
 };
 
@@ -70,7 +74,9 @@ public:
 	static ID3D11InputLayout* InstancedBasic32;
 	static ID3D11InputLayout* InstancedPosNormalTexTan;
 	static ID3D11InputLayout* PosNormalTexTanSkinned;
+#if defined(DEBUG) || defined(_DEBUG)
 	static ID3D11InputLayout* PosTex;
+#endif
 };
 
 #endif // VERTEX_H

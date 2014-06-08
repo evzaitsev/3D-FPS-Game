@@ -7,6 +7,13 @@ class SkinnedModel
 public:
 	struct InitInfo
 	{
+		InitInfo()
+		{
+			Mgr = nullptr;
+			Scale = XMFLOAT3(1.0f, 1.0f, 1.0f);
+			UseDefaultMaterial = true;
+		}
+
 		TextureMgr* Mgr;
 		XMFLOAT3 Scale;
 	

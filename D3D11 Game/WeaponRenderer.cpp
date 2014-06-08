@@ -40,6 +40,7 @@ Weapon::Weapon(std::string path)
 
 	info.Material = DefaultMat;
 	info.Mgr = &d3d->m_TextureMgr;
+	info.Scale = XMFLOAT3(0.085f, 0.085f, 0.085f);
 	info.UseDefaultMaterial = false;
 
 	//using only diffuse map will save the memory but will affect the
@@ -119,9 +120,9 @@ void Weapon::Render()
 
 	XMMATRIX WeaponWorld =  Scaling * Rotation * Translation * CameraWorld;
 
-	//weapon is always infront of camera so we don't need to check for its visibility
-	INT status = 2; 
 
+	//Gun is always infront of camera
+	mWeaponModel->SetModelVisibleStatus(INSIDE);
 	mWeaponModel->Render(WeaponWorld, ViewProj);
 
 }
@@ -130,18 +131,10 @@ void Weapon::Render()
 void Weapon::Update(float dt)
 {
 	static bool Reload = false;
-	static bool FirstTime = true;
 
 	if (GetAsyncKeyState('R')&1)
 	{
 		Reload = true;
-	}
-
-	if (FirstTime)
-	{
-		FinalTransforms = mWeaponModel->mSceneAnimator.GetTransforms(0);
-
-		FirstTime = false;
 	}
 
 	if (!Reload)

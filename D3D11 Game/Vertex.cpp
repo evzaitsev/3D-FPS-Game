@@ -15,11 +15,13 @@ const D3D11_INPUT_ELEMENT_DESC InputLayoutDesc::Basic32[3] =
 	{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0}
 };
 
+#if defined(DEBUG) || defined(_DEBUG)
 const D3D11_INPUT_ELEMENT_DESC InputLayoutDesc::PosTex[2] =
 {
 	{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
 	{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
 };
+#endif
 
 const D3D11_INPUT_ELEMENT_DESC InputLayoutDesc::Terrain[3] = 
 {
@@ -81,7 +83,9 @@ ID3D11InputLayout* InputLayouts::Terrain = 0;
 ID3D11InputLayout* InputLayouts::InstancedBasic32 = 0;
 ID3D11InputLayout* InputLayouts::InstancedPosNormalTexTan = 0;
 ID3D11InputLayout* InputLayouts::PosNormalTexTanSkinned = 0;
+#if defined(DEBUG) || defined(_DEBUG)
 ID3D11InputLayout* InputLayouts::PosTex = 0;
+#endif
 
 void InputLayouts::InitAll(ID3D11Device* device)
 {
@@ -150,9 +154,11 @@ void InputLayouts::InitAll(ID3D11Device* device)
 	// PosTex
 	//
 
+#if defined(DEBUG) || defined(_DEBUG)
 	Effects::DebugTexFX->ViewAlphaTech->GetPassByIndex(0)->GetDesc(&passDesc);
 	HR(device->CreateInputLayout(InputLayoutDesc::PosTex, 2, passDesc.pIAInputSignature,
 		passDesc.IAInputSignatureSize, &PosTex));
+#endif
 }
 
 void InputLayouts::DestroyAll()
@@ -164,7 +170,9 @@ void InputLayouts::DestroyAll()
 	ReleaseCOM(PosNormalTexTanSkinned);
 	ReleaseCOM(Terrain);
 	ReleaseCOM(InstancedBasic32);	
+#if defined(DEBUG) || defined(_DEBUG)
 	ReleaseCOM(PosTex);
+#endif
 }
 
 #pragma endregion

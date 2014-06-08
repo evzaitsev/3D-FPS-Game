@@ -171,8 +171,6 @@ void SkinnedModel::LoadSkinnedModel(const std::string& path, bool& Use32BitForma
 	if (!pScene->HasAnimations())
 		ShowError("Model does have animations.");
 
-	OutputDebugStringA(imp.GetErrorString());
-
 	mSceneAnimator.Init(pScene);
 
 	for (UINT i = 0; i < pScene->mNumMeshes; ++i)
@@ -182,7 +180,7 @@ void SkinnedModel::LoadSkinnedModel(const std::string& path, bool& Use32BitForma
 		Subset subset;
 
 		subset.VertexCount = mesh->mNumVertices;
-		subset.VertexStart = vertices.size();
+		subset.VertexStart = temp_vertices.size();
 		subset.FaceCount = mesh->mNumFaces;
 		subset.ID = mesh->mMaterialIndex;
 
@@ -200,9 +198,11 @@ void SkinnedModel::LoadSkinnedModel(const std::string& path, bool& Use32BitForma
 		{
 			const aiBone* bone = mesh->mBones[b];
 
+			int BoneIndex = mSceneAnimator.GetBoneIndex(bone->mName.C_Str());
+
 			for (UINT w = 0; w < bone->mNumWeights; ++w)
 			{
-				weightsPerVertex[bone->mWeights[w].mVertexId].push_back(aiVertexWeight(b, bone->mWeights[w].mWeight));
+				weightsPerVertex[bone->mWeights[w].mVertexId].push_back(aiVertexWeight(BoneIndex, bone->mWeights[w].mWeight));
 			}
 		}
 
@@ -254,15 +254,6 @@ void SkinnedModel::LoadSkinnedModel(const std::string& path, bool& Use32BitForma
 				weights[w] = weightsPerVertex[j][w].mWeight;
 			}
 
-			
-#if defined(DEBUG) || defined(_DEBUG)
-			float TotalWeight = weights[0] + weights[1] + weights[2] + weights[3];
-
-			char t[100];
-			sprintf_s(t, "TotalWeight : %.2f\n", TotalWeight);
-			OutputDebugStringA(t);
-#endif
-
 			vertex.Weights.x = weights[0];
 			vertex.Weights.y = weights[1];
 			vertex.Weights.z = weights[2];
@@ -298,23 +289,7 @@ void SkinnedModel::LoadSkinnedModel(const std::string& path, bool& Use32BitForma
 		Subsets.push_back(subset);
 	}
 
-	vertices.resize(temp_vertices.size());
-
-	//Store Scaled vertices or we will get wrong bounding box
-	//NOTE: Scale vector should match the x, y, z components with scaling matrix
-	XMVECTOR ScaleVector = XMLoadFloat3(&mInfo.Scale);
-
-	for (UINT i = 0; i < temp_vertices.size(); ++i)
-	{
-		vertices[i] = temp_vertices[i].Pos;
-
-		XMVECTOR VertexPos = XMLoadFloat3(&vertices[i]);
-
-		VertexPos *= ScaleVector;
-
-		XMStoreFloat3(&vertices[i], VertexPos);
-	}
-
+	
 	mModel.mSubsetCount = Subsets.size();
 
 	mModel.Mesh.SetSubsetTable(Subsets);
@@ -330,7 +305,22 @@ void SkinnedModel::LoadSkinnedModel(const std::string& path, bool& Use32BitForma
 		mModel.Mesh.SetIndices(&Indices_16Bit[0], Indices_16Bit.size());
 		mModel.Mesh.SetFormat(DXGI_FORMAT_R16_UINT);
 	}
-	
+
+	//Store Scaled vertices or we will get wrong bounding box
+	//NOTE: Scale vector should match the x, y, z components with scaling matrix
+	XMVECTOR ScaleVector = XMLoadFloat3(&mInfo.Scale);
+
+	for (UINT i = 0; i < temp_vertices.size(); ++i)
+	{
+		XMVECTOR VertexPos = XMLoadFloat3(&temp_vertices[i].Pos);
+		VertexPos *= ScaleVector;
+		XMFLOAT3 tempos;
+
+		XMStoreFloat3(&tempos, VertexPos);
+
+		vertices.push_back(tempos);
+
+	} 
 }
 
 
