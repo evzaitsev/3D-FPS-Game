@@ -284,9 +284,4 @@ private:
 	ID3D11Buffer* mInstancedBuffer;
 };
 
-
-
-
-
-
 #endif

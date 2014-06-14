@@ -62,4 +62,15 @@ struct ModelInstance
 	bool ComputeSSAO;
 };
 
+
+class Map
+{
+private:
+
+public:
+	Map();
+	~Map();
+
+};
+
 #endif

@@ -85,8 +85,8 @@ float Camera::GetFovY()const
 
 float Camera::GetFovX()const
 {
-	float halfWidth = 0.5f*GetNearWindowWidth();
-	return 2.0f*atan(halfWidth / mNearZ);
+	float halfWidth = 0.5f * GetNearWindowWidth();
+	return 2.0f * atan(halfWidth / mNearZ);
 }
 
 float Camera::GetNearWindowWidth()const

@@ -22,16 +22,20 @@ public:
 	};
 
 public:
-	SkinnedModel(const std::string& modelpath, InitInfo& info, bool Use32BitIndexFormat);
+	//Set FillIndices to false if you do not plan to do picking and collision using bullet physics
+	SkinnedModel(const std::string& modelpath, InitInfo& info, bool Use32BitIndexFormat, bool FillIndices);
 	~SkinnedModel();
 
-	void Render(CXMMATRIX World, CXMMATRIX ViewProj);
+	void SetWorld(CXMMATRIX World);
 
+	void Render(CXMMATRIX ViewProj);
+
+	INT Pick(int sx, int sy, XNA::AxisAlignedBox& box);
 
 	void SetModelVisibleStatus(XNA::FrustumIntersection status);
 
 private:
-	void LoadSkinnedModel(const std::string& modelpath, bool& Use32BitFormat);
+	void LoadSkinnedModel(const std::string& modelpath, bool& Use32BitFormat, bool& FillIndices);
 
 	void LoadTextures(aiMaterial* Mat);
 	void LoadMaterials(aiMaterial* Mat);
@@ -41,9 +45,14 @@ public:
 
 	std::vector<XMFLOAT3> vertices;
 	std::vector<XMFLOAT4X4> FinalTransforms;
+
+	//required for bullet physics and picking
+	INT* Indices;
 private:
 	DirectionalLight Lights[3];
 	PointLight PointLights[3];
+
+	XMFLOAT4X4 mWorld;
 
 	XNA::FrustumIntersection mModelVisibleStatus;
 

@@ -5,7 +5,6 @@
 #define DEFAULT_WIDTH 1024
 #define DEFAULT_HEIGHT 768
 
-
 #define DEBUG
 
 #if defined(DEBUG) || defined(_DEBUG)

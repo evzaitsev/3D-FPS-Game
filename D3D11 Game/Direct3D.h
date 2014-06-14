@@ -1,8 +1,6 @@
 #ifndef _DIRECT3D_H_
 #define _DIRECT3D_H_
 
-
-
 class Direct3D 
 {
 private:
@@ -33,10 +31,7 @@ private:
 	SpriteBatch m_SpriteBatch;
 
 	Model* m_Sponza;
-	SkinnedModel* m_Tiny;
 	
-	Weapon* m_AK47;
-
 	ID3D11Buffer* mScreenQuadVB;
 	ID3D11Buffer* mScreenQuadIB;
 
@@ -45,6 +40,8 @@ private:
 #ifdef _USE_DEFERRED_SHADING_
 	gBuffers* m_GBuffers;
 #endif
+
+	Character* m_Character;
 
 	std::vector<ModelInstance> ModelInstances;  
 	std::vector<SkinnedModelInstance> SkinnedModelInstances;
@@ -56,11 +53,10 @@ private:
 	btSequentialImpulseConstraintSolver* m_solver;
     btDiscreteDynamicsWorld* m_dynamicsWorld;
 	btCollisionShape* m_groundShape;	
-	btCollisionShape* m_fallShape;
 	btDefaultMotionState* m_groundMotionState;
     btRigidBody* m_groundRigidBody;
     btDefaultMotionState* m_fallMotionState;
-    btRigidBody* m_fallRigidBody;
+	btRigidBody* m_fallRigidBody;
 public:
 	XNA::Frustum m_Frustum;
 	Camera m_Cam;
@@ -80,6 +76,7 @@ private:
 	void DrawModelsToSsaoMap();
 	void Init();
 	void InitPhysics();
+	void InitCharacter();
 	void InitTerrainResources();
 	void InitAllModels();
 	void InitFont();

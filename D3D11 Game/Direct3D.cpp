@@ -5,7 +5,7 @@
 //A free 3D game under construction by newtechnology
 //Current Status: SSAO delayed until deferred shading is implemented
 //Credits: Huge thanks to Frank D. Luna for his awesome book and gamedev.net
-//Current goal: Adding skinned model loading and rendering support + physics and collision
+//Current goal: physics and collision
 //==================================================
 
 ID3D11Device* pDevice = 0;
@@ -29,6 +29,8 @@ Direct3D::Direct3D()
 	m_AppPaused = false;
 	m_RenderTargetView = nullptr;
 	m_DepthStencilView = nullptr;
+	mScreenQuadIB = nullptr;
+	mScreenQuadVB = nullptr;
 	m_DepthStencilBuffer = nullptr;
 	m_Maximize = false;
 	m_Minimize = false;
@@ -50,6 +52,8 @@ Direct3D::Direct3D(int Width, int Height, bool FullScreen, bool Multisample)
 	m_AppPaused = false;
 	m_RenderTargetView = nullptr;
 	m_DepthStencilView = nullptr;
+	mScreenQuadIB = nullptr;
+	mScreenQuadVB = nullptr;
 	m_DepthStencilBuffer = nullptr;
 	m_Sky = nullptr;
 	m_Smap = nullptr;
@@ -76,6 +80,9 @@ Direct3D::Direct3D(int Width, int Height)
 	m_RenderTargetView = nullptr;
 	m_DepthStencilView = nullptr;
 	m_DepthStencilBuffer = nullptr;
+	mScreenQuadIB = nullptr;
+	mScreenQuadVB = nullptr;
+	m_Character = nullptr;
 	m_Sky = nullptr;
 	m_Smap = nullptr;
 	//m_Ssao = nullptr;
@@ -102,15 +109,12 @@ Direct3D::~Direct3D()
 	ReleaseCOM(m_SwapChain);
 	ReleaseCOM(m_DepthStencilBuffer);
 
-#if defined(DEBUG) || defined(_DEBUG)
 	ReleaseCOM(mScreenQuadIB);
 	ReleaseCOM(mScreenQuadVB);
-#endif
 
 	SafeDelete(m_Sky);
 	SafeDelete(m_Smap);
-	SafeDelete(m_AK47);
-	SafeDelete(m_Tiny);
+	SafeDelete(m_Character);
 
 #ifdef _USE_DEFERRED_SHADING_
 	SafeDelete(m_GBuffers);
@@ -121,17 +125,13 @@ Direct3D::~Direct3D()
 
 	SafeDelete(m_indexVertexArrays);
 
-	m_dynamicsWorld->removeRigidBody(m_fallRigidBody);
     m_dynamicsWorld->removeRigidBody(m_groundRigidBody);
 
-	delete m_fallRigidBody->getMotionState();
     delete m_groundRigidBody->getMotionState();
 
 	
 
-	SafeDelete(m_fallRigidBody);
 	SafeDelete(m_groundRigidBody);
-	SafeDelete(m_fallShape);
 	SafeDelete(m_groundShape);
 	SafeDelete(m_dynamicsWorld);
 	SafeDelete(m_solver);
@@ -143,8 +143,10 @@ Direct3D::~Direct3D()
 	Effects::DestroyAll();
 	InputLayouts::DestroyAll();
 	RenderStates::DestroyAll();
+	Weapons::DestroyAll();
 
 }
+
 
 void Direct3D::InitPhysics()
 {
@@ -154,12 +156,12 @@ void Direct3D::InitPhysics()
       m_collisionConfiguration = new btDefaultCollisionConfiguration();
       m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
 
-      m_solver = new btSequentialImpulseConstraintSolver;
+      m_solver = new btSequentialImpulseConstraintSolver();
 
       m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver,
 		  m_collisionConfiguration);
 
-      m_dynamicsWorld->setGravity(btVector3(0, -9.8f, 0));
+      m_dynamicsWorld->setGravity(btVector3(0, -10.0f, 0));
 
 	  int numtri = m_Sponza->GetNumTriangles();
 
@@ -170,7 +172,6 @@ void Direct3D::InitPhysics()
 
 	  m_groundShape =  new btBvhTriangleMeshShape(m_indexVertexArrays, true, true);//new btStaticPlaneShape(btVector3(0, 1, 0), 1);
 
-	  m_fallShape = new btCapsuleShape(1.0f, 3.0f);
 
       m_groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, -1, 0)));
 
@@ -180,19 +181,7 @@ void Direct3D::InitPhysics()
         
 	  m_dynamicsWorld->addRigidBody(m_groundRigidBody);
 
-      m_fallMotionState =
-                new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(0,1000, 100)));
-
-	  //average weight of a person = 65 kg
-      btScalar mass = 65.0f;
-      btVector3 fallInertia(0,0,0);
-
-      m_fallShape->calculateLocalInertia(mass, fallInertia);
-
-      btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, m_fallMotionState, m_fallShape, fallInertia);
-
-      m_fallRigidBody = new btRigidBody(fallRigidBodyCI);
-      m_dynamicsWorld->addRigidBody(m_fallRigidBody);
+	
 }
 
 
@@ -214,7 +203,6 @@ void Direct3D::InitAllModels()
 	mDirLights[2].Direction = XMFLOAT3(-0.57735f, -0.57735f, -0.57735f);
 
 	ModelInstance m_SponzaInstance;
-	SkinnedModelInstance m_TinyInstance;
 
 	
 	Material DefaultMat;
@@ -254,28 +242,22 @@ void Direct3D::InitAllModels()
 	m_SponzaInstance.ComputeSSAO = false;
 	m_SponzaInstance.Model = m_Sponza;
 
-	m_Tiny = new SkinnedModel("Resources\\Models\\Tiny.x", SkinnedInfo, false);
-
-	m_TinyInstance.Clip = "Walk";
-	m_TinyInstance.SkinnedModel = m_Tiny;
-	m_TinyInstance.SetWorld(XMMatrixScaling(SkinnedInfo.Scale.x, SkinnedInfo.Scale.y, SkinnedInfo.Scale.z));
-
-	//Increase speed by 10x
-	m_TinyInstance.DoubleSpeed();
-	m_TinyInstance.DoubleSpeed();
-	m_TinyInstance.DoubleSpeed();
-	m_TinyInstance.DoubleSpeed();
-	m_TinyInstance.DoubleSpeed();
-
-	m_AK47 = new Weapon("Resources\\Models\\AK47.DAE");
-
 
 	ModelInstances.push_back(m_SponzaInstance);
-	SkinnedModelInstances.push_back(m_TinyInstance);
 
 
 	ComputeAABB();
 
+}
+
+void Direct3D::InitCharacter()
+{
+	//Init weapons before player
+	Weapons::InitAll();
+
+	m_Character = new Character(&Weapons::WeaponManager, m_broadphase, m_dynamicsWorld);
+
+	m_Character->SetPrimaryWeaponModel("AK47");
 }
 
 XNA::AxisAlignedBox Direct3D::MergeAABBs(
@@ -479,8 +461,10 @@ void Direct3D::Init()
 	m_GBuffers = new gBuffers(pDevice, pDeviceContext, m_ViewPort, m_Width, m_Height);
 #endif
 
+	
 	InitAllModels();
 	InitPhysics();
+	InitCharacter();
 	InitFont();
 
 	XNA::Sphere s;
@@ -631,33 +615,9 @@ void Direct3D::RestoreRenderTarget()
 
 void Direct3D::UpdateScene(float dt)
 {
+	m_dynamicsWorld->stepSimulation(1.0f/60.0f, 10.0f);
 
-    m_dynamicsWorld->stepSimulation(1.0f/60.0f, 10.0f);
-
-	btTransform trans;
-
-    m_fallRigidBody->getMotionState()->getWorldTransform(trans);
-
-   static const unsigned short int speed = 2; //speed is double just for debugging/developers
-
-	if( GetAsyncKeyState('W') & 0x8000 )
-	{
-		m_Cam.Walk(10.0f * dt * speed);
-		m_fallRigidBody->applyCentralForce(btVector3(0, 10, 0));
-	}
-	if( GetAsyncKeyState('S') & 0x8000 )
-	{
-		m_Cam.Walk(-10.0f * dt * speed);
-		m_fallRigidBody->setLinearVelocity(btVector3(0, 0, -5));
-	}
-	if( GetAsyncKeyState('A') & 0x8000 )
-		m_Cam.Strafe(-10.0f * dt * speed);
-
-	if( GetAsyncKeyState('D') & 0x8000 )
-		m_Cam.Strafe(10.0f * dt * speed);
-
-	//m_Cam.SetPosition(trans.getOrigin().getX(), trans.getOrigin().getY(), trans.getOrigin().getZ());
-
+   
 #ifdef USE_FREE_CAMERA_KEY
 	if( GetAsyncKeyState('P') & 1 )
 		m_freeCamera = !m_freeCamera;
@@ -706,17 +666,19 @@ void Direct3D::UpdateScene(float dt)
 
 		XNA::FrustumIntersection ModelVisibleStatus = IntersectAABBFrustum(&SkinnedModelInstances[i].box, W);
 
+		SkinnedModelInstances[i].SkinnedModel->SetWorld(W);
 		SkinnedModelInstances[i].SkinnedModel->SetModelVisibleStatus(ModelVisibleStatus);
 		SkinnedModelInstances[i].Update(dt);
 	}
 
 
-	m_AK47->Update(dt);
+	m_Character->Update(dt);
 
 #ifdef USE_FREE_CAMERA_KEY
 	if (m_freeCamera)
 		return;
 #endif
+
 
 	//XMFLOAT3 pos = m_Cam.GetPosition();
 	//float y = m_Land.GetHeight(pos.x, pos.z) + 7.0f;
@@ -725,6 +687,7 @@ void Direct3D::UpdateScene(float dt)
 
 void Direct3D::UpdateInstancedModelsData()
 {
+	static bool ExecuteLoop = true;
 
 	for (USHORT i = 0; i < ModelInstances.size(); ++i)
 	{
@@ -849,9 +812,7 @@ void Direct3D::DrawModels(bool ComputeSSAO)
 		if (SkinnedModelInstances[i].SkinnedModel == 0)
 			continue;
 
-		XMMATRIX& W = SkinnedModelInstances[i].GetWorldXM();
-
-		SkinnedModelInstances[i].SkinnedModel->Render(W, ViewProj);
+		SkinnedModelInstances[i].SkinnedModel->Render(ViewProj);
 	}
 }
 
@@ -976,6 +937,7 @@ void Direct3D::DrawScene()
 
 	DrawModels(false);
 
+	m_Character->Draw();
 
 #ifdef _USE_DEFERRED_SHADING_
 	//Do lighting as a post processing step
@@ -1010,7 +972,7 @@ void Direct3D::DrawScene()
 
 	pDeviceContext->ClearDepthStencilView(m_DepthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-	m_AK47->Render();
+	m_Character->DrawWeapon();
 
 	ID3D11ShaderResourceView* nullSRV[16] = { 0 };
 	pDeviceContext->PSSetShaderResources(0, 16, nullSRV);
@@ -1202,7 +1164,7 @@ void Direct3D::CalcFPS()
 
 		std::wostringstream outs;   
 		outs.precision(6);
-		outs << "Game Engine" << L"    "
+		outs << "My FPS Game" << L"    "
 			 << L"FPS: " << fps << L"    " 
 			 << L"Frame Time: " << mspf << L" (ms)";
 	
@@ -1247,6 +1209,7 @@ void Direct3D::OnMouseUp(WPARAM btnState, int x, int y)
 
 BOOL WINAPI Direct3D::Run(HINSTANCE& hInstance)
 {
+	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 
 	WNDCLASSEX wc;
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
@@ -1265,7 +1228,7 @@ BOOL WINAPI Direct3D::Run(HINSTANCE& hInstance)
 	hWnd = CreateWindowEx(
 		NULL,
 		L"WindowClass1",
-		L"Game Engine",
+		L"My FPS Game",
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
@@ -1313,10 +1276,6 @@ BOOL WINAPI Direct3D::Run(HINSTANCE& hInstance)
 			} 
 		}
 	}
-
-#if defined(DEBUG) || defined(_DEBUG)
-	_CrtDumpMemoryLeaks();
-#endif
 
 	return (int)msg.wParam;
 }

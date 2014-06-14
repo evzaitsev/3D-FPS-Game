@@ -91,6 +91,7 @@
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="cAnimationController.h" />
+    <ClInclude Include="Character.h" />
     <ClInclude Include="D3D11 Game.h" />
     <ClInclude Include="d3dUtil.h" />
     <ClInclude Include="d3dx11effect.h" />
@@ -121,12 +122,15 @@
     <ClInclude Include="trees.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="Waves.h" />
-    <ClInclude Include="WeaponRenderer.h" />
+    <ClInclude Include="Weapon.h" />
+    <ClInclude Include="WeaponManger.h" />
+    <ClInclude Include="Weapons.h" />
     <ClInclude Include="XNACollision.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="cAnimationController.cpp" />
+    <ClCompile Include="Character.cpp" />
     <ClCompile Include="D3D11 Game.cpp" />
     <ClCompile Include="d3dUtil.cpp" />
     <ClCompile Include="Direct3D.cpp" />
@@ -155,7 +159,9 @@
     <ClCompile Include="trees.cpp" />
     <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="Waves.cpp" />
-    <ClCompile Include="WeaponRenderer.cpp" />
+    <ClCompile Include="Weapon.cpp" />
+    <ClCompile Include="WeaponManager.cpp" />
+    <ClCompile Include="Weapons.cpp" />
     <ClCompile Include="XNACollision.cpp" />
   </ItemGroup>
   <ItemGroup>

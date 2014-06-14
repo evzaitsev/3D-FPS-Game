@@ -17,6 +17,7 @@
 
 // C RunTime Header Files
 #include <stdlib.h>
+#include <crtdbg.h>
 #include <malloc.h>
 #include <memory.h>
 #include <tchar.h>
@@ -46,7 +47,6 @@
 // TODO: reference additional headers your program requires here
 
 #include "Lighting.h"
-#include "btBulletDynamicsCommon.h"
 #include "D3D11 Game.h"
 #include "cAnimationController.h"
 #include "d3dUtil.h"
@@ -73,5 +73,13 @@
 #include "Grass.h"
 #include "Map.h"
 #include "gBuffers.h"
-#include "WeaponRenderer.h"
+#include "WeaponManger.h"
+#include "Weapon.h"
+#include "LinearMath/btVector3.h"
+#include "BulletDynamics/Character/btKinematicCharacterController.h"
+#include "BulletCollision/CollisionDispatch/btGhostObject.h"
+#include "BulletCollision/CollisionShapes/btConvexHullShape.h"
+#include "btBulletDynamicsCommon.h"
+#include "Character.h"
+#include "Weapons.h"
 #include "Direct3D.h"
