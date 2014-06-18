@@ -408,7 +408,7 @@ void Tree::DrawFarModelToShadowMap(CXMMATRIX World, CXMMATRIX viewProj, CXMMATRI
 
 void Tree::Draw(CXMMATRIX W)
 {
-	XMMATRIX ShadowTransform = W * XMLoadFloat4x4(&d3d->m_ShadowTransform);
+	XMMATRIX ShadowTransform = XMLoadFloat4x4(&mShadowTransform);
 	XMMATRIX WorldInvTranspose = MathHelper::InverseTranspose(W);
 
 	XMMATRIX view     = d3d->m_Cam.View();

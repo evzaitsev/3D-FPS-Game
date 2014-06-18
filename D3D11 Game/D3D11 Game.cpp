@@ -1,6 +1,3 @@
-// D3D11 Game.cpp : Defines the entry point for the application.
-//
-
 #include "stdafx.h"
 #include "D3D11 Game.h"
 
@@ -10,7 +7,7 @@ BOOL WINAPI WinMain(HINSTANCE hInst,
 					LPSTR lpCmdline,
 					int nCmdShow)
 {
-	Direct3D app(800, 600);
+	Direct3D app;
 
 	d3d = &app;
 

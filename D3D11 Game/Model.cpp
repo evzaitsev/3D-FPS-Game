@@ -10,10 +10,15 @@ Model::Model(
 	bool FillIndices)
 {
 
+	mShadowMap = nullptr;
+
+	XMMATRIX I = XMMatrixIdentity();
+	XMStoreFloat4x4(&mShadowTransform, I);
+
 	Lights[0].Ambient  = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
 	Lights[0].Diffuse  = XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f);
 	Lights[0].Specular = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
-	Lights[0].Direction = XMFLOAT3(-1.0f, -1.0f, 0.0f);
+	Lights[0].Direction = XMFLOAT3(0.0f, -1.0f, 0.0f);
 
 	XMFLOAT3 pos[3];
 
@@ -50,7 +55,10 @@ Model::Model(
 	mInfo = info;
 
 	mVisibleObjectCount = 0;
+
+#if defined(DEBUG) || defined(_DEBUG)
 	mDrawCalls = 0;
+#endif
 
 	Indices = nullptr;
 	mInstancedBuffer = nullptr;
@@ -80,7 +88,6 @@ Model::Model(
 Model::~Model()
 {
 	ReleaseCOM(mInstancedBuffer);
-
 	SafeDelete(Indices);
 }
 
@@ -929,10 +936,24 @@ void Model::BuildInstanceData()
 
 }
 
-void Model::SetDirLight(DirectionalLight Light[3])
+void Model::SetDirLights(DirectionalLight* Light)
 {
-	for (USHORT i = 0; i < 3; ++i)
+	for (USHORT i = 0; i < MAX_DIRECTIONAL_LIGHTS; ++i)
 		Lights[i] = Light[i];
+}
+
+void Model::SetPointLights(PointLight* light)
+{
+	for (USHORT i = 0; i < MAX_POINT_LIGHTS; ++i)
+		PointLights[i] = light[i];
+}
+
+void Model::SetShadowMap(ID3D11ShaderResourceView* srv)
+{
+	if (srv == nullptr)
+		return;
+
+	mShadowMap = srv;
 }
 
 void Model::Render(CXMMATRIX World, CXMMATRIX ViewProj)
@@ -944,37 +965,7 @@ void Model::Render(CXMMATRIX World, CXMMATRIX ViewProj)
 }
 
 
-
-
-void Model::RenderSubset(UINT Id, UINT pass, CXMMATRIX World, CXMMATRIX WorldViewProj, 
-						 CXMMATRIX WorldInvTranspose, CXMMATRIX ShadowTransform, 
-						 CXMMATRIX TexTransform)
-{
-	Effects::NormalMapFX->SetEyePosW(d3d->m_Cam.GetPosition());
-	Effects::NormalMapFX->SetDirLights(Lights);
-	Effects::NormalMapFX->SetPointLights(PointLights);
-	Effects::NormalMapFX->SetShadowMap(d3d->GetShadowMap());
-	
-	Effects::NormalMapFX->SetWorld(World);
-	Effects::NormalMapFX->SetWorldInvTranspose(WorldInvTranspose);
-	Effects::NormalMapFX->SetWorldViewProj(WorldViewProj);
-	Effects::NormalMapFX->SetTexTransform(TexTransform);
-	Effects::NormalMapFX->SetShadowTransform(ShadowTransform);
-
-	Effects::NormalMapFX->SetMaterial(Materials[Id]);
-
-	Effects::NormalMapFX->SetDiffuseMap(DiffuseMapSRV[Id]);
-	Effects::NormalMapFX->SetNormalMap(NormalMapSRV[Id]);
-	Effects::NormalMapFX->SetAmbientOcclusionMap(AOMapSRV[Id]);
-	Effects::NormalMapFX->SetSpecularMap(SpecMapSRV[Id]);
-			
-    //activeTech->GetPassByIndex(pass)->Apply(0, pDeviceContext);
-
-	mModel.Mesh.Draw(Id);
-
-}
-
-void Model::RenderShadowMap(CXMMATRIX World, CXMMATRIX ViewProj)
+void Model::RenderShadowMap(CXMMATRIX World, CXMMATRIX ViewProj, bool StaticShadowMap)
 {
 	pDeviceContext->IASetInputLayout(InputLayouts::Basic32);
 	pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	
@@ -1011,10 +1002,12 @@ void Model::RenderShadowMap(CXMMATRIX World, CXMMATRIX ViewProj)
     {
 		for (UINT i = 0; i < mModel.mSubsetCount; ++i)
 	    {   
-		//	if (ModelVisibleList[i] == false)
-		//		continue;
-
-			//since its not going to be rendered anyways 
+			if (!StaticShadowMap)
+			{
+			    if (ModelVisibleList[i] == false)
+					continue;
+			}
+			
 			if (DiffuseMapSRV[i] == nullptr)
 				continue;
 
@@ -1077,6 +1070,7 @@ void Model::RenderInstancedShadowMap(CXMMATRIX World, CXMMATRIX ViewProj)
     {
 		for (UINT i = 0; i < mModel.mSubsetCount; ++i)
 	    {   
+		
 			pDeviceContext->IASetVertexBuffers(0, 2, vbs, stride, offset);
 			pDeviceContext->IASetIndexBuffer(*mModel.Mesh.GetIndexBuffer(), mModel.Mesh.GetIndexBufferFormat(), 0);
 
@@ -1115,7 +1109,7 @@ void Model::RenderInstancedNormalMapped(CXMMATRIX World, CXMMATRIX ViewProj, boo
 	ID3D11Buffer* vbs[2] = {*mModel.Mesh.GetVertexBuffer(), mInstancedBuffer};
  
 	XMMATRIX W = World;
-	XMMATRIX ShadowTransform = W * XMLoadFloat4x4(&d3d->m_ShadowTransform);
+	XMMATRIX ShadowTransform = XMLoadFloat4x4(&mShadowTransform);
 	
 	Effects::NormalMapFX->SetDirLights(Lights);
 	Effects::NormalMapFX->SetPointLights(PointLights);
@@ -1138,7 +1132,7 @@ void Model::RenderInstancedNormalMapped(CXMMATRIX World, CXMMATRIX ViewProj, boo
 		Effects::NormalMapFX->SetWorldInvTranspose(worldInvTranspose);
 		Effects::NormalMapFX->SetViewProj(ViewProj);
 		Effects::NormalMapFX->SetTexTransform(XMMatrixIdentity());
-		Effects::NormalMapFX->SetShadowMap(d3d->GetShadowMap());
+		Effects::NormalMapFX->SetShadowMap(mShadowMap);
 		Effects::NormalMapFX->SetShadowTransform(ShadowTransform);
 
 		for (UINT i = 0; i < mModel.mSubsetCount; ++i)
@@ -1163,7 +1157,9 @@ void Model::RenderInstancedNormalMapped(CXMMATRIX World, CXMMATRIX ViewProj, boo
 			pDeviceContext->DrawIndexedInstanced(mModel.Mesh.SubsetTable[i].FaceCount * 3, 
 				mVisibleObjectCount, mModel.Mesh.SubsetTable[i].FaceStart * 3,  0, 0);
 
+#if defined(DEBUG) || defined(_DEBUG)
 			++mDrawCalls;
+#endif
 
 			if (mInfo.AlphaToCoverage)
 			    pDeviceContext->OMSetBlendState(0, blendFactor, 0xffffffff);
@@ -1190,7 +1186,7 @@ void Model::RenderInstanced(CXMMATRIX World, CXMMATRIX ViewProj, bool& AOMap, bo
 	ID3D11Buffer* vbs[2] = {*mModel.Mesh.GetVertexBuffer(), mInstancedBuffer};
  
 	XMMATRIX W = World;
-	XMMATRIX ShadowTransform = W * XMLoadFloat4x4(&d3d->m_ShadowTransform);
+	XMMATRIX ShadowTransform = XMLoadFloat4x4(&mShadowTransform);
 
 	Effects::BasicFX->SetDirLights(Lights);
 	Effects::BasicFX->SetEyePosW(d3d->m_Cam.GetPosition());
@@ -1213,7 +1209,7 @@ void Model::RenderInstanced(CXMMATRIX World, CXMMATRIX ViewProj, bool& AOMap, bo
 		Effects::BasicFX->SetWorldInvTranspose(worldInvTranspose);
 		Effects::BasicFX->SetViewProj(ViewProj);
 		Effects::BasicFX->SetTexTransform(XMMatrixIdentity());
-		Effects::BasicFX->SetShadowMap(d3d->GetShadowMap());
+		Effects::BasicFX->SetShadowMap(mShadowMap);
 		Effects::BasicFX->SetShadowTransform(ShadowTransform);
 
 		for (UINT i = 0; i < mModel.mSubsetCount; ++i)
@@ -1248,6 +1244,9 @@ void Model::RenderNormalMapped(CXMMATRIX World, CXMMATRIX ViewProj, bool AOMap, 
 	if (mIsModelVisible == OUTSIDE)
 		return;
 
+	if (mShadowMap == nullptr)
+		return;
+
 	ID3DX11EffectTechnique* activeTech = mInfo.technique;
 
 	pDeviceContext->IASetInputLayout(InputLayouts::PosNormalTexTan);
@@ -1257,13 +1256,13 @@ void Model::RenderNormalMapped(CXMMATRIX World, CXMMATRIX ViewProj, bool AOMap, 
 	XMMATRIX worldInvTranspose = MathHelper::InverseTranspose(W);
 	XMMATRIX WorldViewProj = W * ViewProj;
 	XMMATRIX TexTransform = XMMatrixIdentity();
-	XMMATRIX ShadowTransform = W * XMLoadFloat4x4(&d3d->m_ShadowTransform);
+	XMMATRIX ShadowTransform = XMLoadFloat4x4(&mShadowTransform);
 
 
 	Effects::NormalMapFX->SetEyePosW(d3d->m_Cam.GetPosition());
 	Effects::NormalMapFX->SetDirLights(Lights);
 	Effects::NormalMapFX->SetPointLights(PointLights);
-	Effects::NormalMapFX->SetShadowMap(d3d->GetShadowMap());
+	Effects::NormalMapFX->SetShadowMap(mShadowMap);
 	
 	Effects::NormalMapFX->SetWorld(W);
 	Effects::NormalMapFX->SetWorldInvTranspose(worldInvTranspose);
@@ -1291,8 +1290,9 @@ void Model::RenderNormalMapped(CXMMATRIX World, CXMMATRIX ViewProj, bool AOMap, 
 			if (DiffuseMapSRV[i] == nullptr)
 				continue;
 
+#if defined(DEBUG) || defined(_DEBUG)
 			++mDrawCalls;
-
+#endif
 		    Effects::NormalMapFX->SetMaterial(Materials[i]);
 			Effects::NormalMapFX->SetDiffuseMap(DiffuseMapSRV[i]);
 			Effects::NormalMapFX->SetNormalMap(NormalMapSRV[i]);
@@ -1339,13 +1339,13 @@ void Model::RenderDeferred(CXMMATRIX World, CXMMATRIX ViewProj)
 	XMMATRIX worldInvTranspose = MathHelper::InverseTranspose(W);
 	XMMATRIX WorldViewProj = W * ViewProj;
 	XMMATRIX TexTransform = XMMatrixIdentity();
-	XMMATRIX ShadowTransform = W * XMLoadFloat4x4(&d3d->m_ShadowTransform);
+	XMMATRIX ShadowTransform = XMLoadFloat4x4(&mShadowTransform);
 
 	Effects::DeferredFX->SetWorld(W);
 	Effects::DeferredFX->SetWorldInvTranspose(worldInvTranspose);
 	Effects::DeferredFX->SetWorldViewProj(WorldViewProj);
 	Effects::DeferredFX->SetTexTransform(TexTransform);
-	Effects::DeferredFX->SetShadowMap(d3d->GetShadowMap());
+	Effects::DeferredFX->SetShadowMap(mShadowMap);
 	Effects::DeferredFX->SetShadowTransform(ShadowTransform);
 
 	if (!mInfo.BackfaceCulling)
@@ -1367,7 +1367,9 @@ void Model::RenderDeferred(CXMMATRIX World, CXMMATRIX ViewProj)
 			if (DiffuseMapSRV[i] == nullptr)
 				continue;
 
+#if defined(DEBUG) || defined(_DEBUG)
 			++mDrawCalls;
+#endif
 
 			Effects::DeferredFX->SetDiffuseMap(DiffuseMapSRV[i]);
 			Effects::DeferredFX->SetNormalMap(NormalMapSRV[i]);
@@ -1425,7 +1427,9 @@ void Model::RenderNormalDepthMap(CXMMATRIX World, CXMMATRIX ViewProj)
 			if (ModelVisibleList[i] == false)
 				continue;
 
+#if defined(DEBUG) || defined(_DEBUG)
 			++mDrawCalls;
+#endif
 
 			Effects::SsaoNormalDepthFX->SetWorldView(worldView);
 	        Effects::SsaoNormalDepthFX->SetWorldInvTransposeView(worldInvTransposeView);
@@ -1447,6 +1451,9 @@ void Model::Render(CXMMATRIX World, CXMMATRIX ViewProj, bool AOMap, bool Specula
 	if (mIsModelVisible == 0)
 		return;
 
+	if (mShadowMap == nullptr)
+		return;
+
 	ID3DX11EffectTechnique* activeTech = mInfo.technique;
 
 	pDeviceContext->IASetInputLayout(InputLayouts::Basic32);
@@ -1456,7 +1463,7 @@ void Model::Render(CXMMATRIX World, CXMMATRIX ViewProj, bool AOMap, bool Specula
 	XMMATRIX worldInvTranspose = MathHelper::InverseTranspose(W);
 	XMMATRIX WorldViewProj = W * ViewProj;
 	XMMATRIX TexTransform = XMMatrixIdentity();
-	XMMATRIX ShadowTransform = W * XMLoadFloat4x4(&d3d->m_ShadowTransform);
+	XMMATRIX ShadowTransform = XMLoadFloat4x4(&mShadowTransform);
 
 	// Transform NDC space [-1,+1]^2 to texture space [0,1]^2
 /*	XMMATRIX toTexSpace(
@@ -1474,7 +1481,7 @@ void Model::Render(CXMMATRIX World, CXMMATRIX ViewProj, bool AOMap, bool Specula
 		pDeviceContext->RSSetState(RenderStates::NoCullRS);
 	
 
-	Effects::BasicFX->SetShadowMap(d3d->GetShadowMap());
+	Effects::BasicFX->SetShadowMap(mShadowMap);
 
 //	if (mSSAO)
 	   // Effects::BasicFX->SetSsaoMap(d3d->m_Ssao->AmbientSRV());
@@ -1503,7 +1510,10 @@ void Model::Render(CXMMATRIX World, CXMMATRIX ViewProj, bool AOMap, bool Specula
 			if (DiffuseMapSRV[i] == nullptr)
 				continue;
 
+#if defined(DEBUG) || defined(_DEBUG)
 			++mDrawCalls;
+#endif
+
 
 		    Effects::BasicFX->SetMaterial(Materials[i]);
 			Effects::BasicFX->SetDiffuseMap(DiffuseMapSRV[i]);
@@ -1538,7 +1548,9 @@ void Model::Render(CXMMATRIX World, CXMMATRIX ViewProj, bool AOMap, bool Specula
 
 void Model::Update(CXMMATRIX World)
 {
+#if defined(DEBUG) || defined(_DEBUG)
 	mDrawCalls = 0;
+#endif
 
 	if (mIsModelVisible == INSIDE)
 	{
@@ -1570,10 +1582,14 @@ UINT Model::GetNumTriangles()
 	return mModel.mNumFaces;
 }
 
+#if defined(DEBUG) || defined(_DEBUG)
+
 UINT Model::GetNumDrawCalls()
 {
 	return mDrawCalls;
 }
+
+#endif
 
 int Model::Pick(int sx, int sy, CXMMATRIX World, XNA::AxisAlignedBox& box)
 {
@@ -1646,6 +1662,11 @@ int Model::Pick(int sx, int sy, CXMMATRIX World, XNA::AxisAlignedBox& box)
 	}
 
 	return PickedTriangle;
+}
+
+void Model::SetShadowTransform(CXMMATRIX Transform)
+{
+	XMStoreFloat4x4(&mShadowTransform, Transform);
 }
 
 MeshGeometry::MeshGeometry()

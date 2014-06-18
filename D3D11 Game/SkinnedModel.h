@@ -10,8 +10,9 @@ public:
 		InitInfo()
 		{
 			Mgr = nullptr;
-			Scale = XMFLOAT3(1.0f, 1.0f, 1.0f);
 			UseDefaultMaterial = true;
+
+			Scale = XMFLOAT3(1.0f, 1.0f, 1.0f);
 		}
 
 		TextureMgr* Mgr;
@@ -22,7 +23,7 @@ public:
 	};
 
 public:
-	//Set FillIndices to false if you do not plan to do picking and collision using bullet physics
+	//Set FillIndices to false if you do not plan to do picking or collision using bullet physics
 	SkinnedModel(const std::string& modelpath, InitInfo& info, bool Use32BitIndexFormat, bool FillIndices);
 	~SkinnedModel();
 
@@ -33,6 +34,13 @@ public:
 	INT Pick(int sx, int sy, XNA::AxisAlignedBox& box);
 
 	void SetModelVisibleStatus(XNA::FrustumIntersection status);
+	void SetShadowMap(ID3D11ShaderResourceView* srv);
+	void SetShadowTransform(CXMMATRIX Transform);
+
+
+#if defined(DEBUG) || defined(_DEBUG)
+	UINT GetNumDrawCalls();
+#endif
 
 private:
 	void LoadSkinnedModel(const std::string& modelpath, bool& Use32BitFormat, bool& FillIndices);
@@ -46,7 +54,6 @@ public:
 	std::vector<XMFLOAT3> vertices;
 	std::vector<XMFLOAT4X4> FinalTransforms;
 
-	//required for bullet physics and picking
 	INT* Indices;
 private:
 	DirectionalLight Lights[3];
@@ -54,15 +61,24 @@ private:
 
 	XMFLOAT4X4 mWorld;
 
+#if defined(DEBUG) || defined(_DEBUG)
+	UINT mDrawCalls;
+#endif
+
 	XNA::FrustumIntersection mModelVisibleStatus;
 
 	InitInfo mInfo;
 	ModelData mModel;
+
+	XMFLOAT4X4 mShadowTransform;
 	
 	std::vector<Material> Materials;
 
 	std::vector<ID3D11ShaderResourceView*> DiffuseMapSRV;
 	std::vector<ID3D11ShaderResourceView*> NormalMapSRV;
+
+
+	ID3D11ShaderResourceView* mShadowMap;
 
 };
 
@@ -120,10 +136,15 @@ struct SkinnedModelInstance
 
 	float TimePos;
 	int AnimationIndex;
+
+	//sometimes there may be some animated model which do not move but stay static. For e.g trees
+	//So we do not require to update AABB/Sphere of such models
+	bool UpdateShape;
 	
 	std::string Clip;
+
 	XNA::AxisAlignedBox box;
-	
+	XNA::Sphere sphere;
 
 	void Update(float dt)
 	{

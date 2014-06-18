@@ -1,6 +1,7 @@
 #ifndef _DIRECT3D_H_
 #define _DIRECT3D_H_
 
+
 class Direct3D 
 {
 private:
@@ -30,13 +31,18 @@ private:
 	FontSheet m_Font;
 	SpriteBatch m_SpriteBatch;
 
+
+	SceneManagement::Scene* SponzaScene;
+
 	Model* m_Sponza;
+	SkinnedModel* m_Tiny;
 	
+#if defined(DEBUG) || (_DEBUG)
 	ID3D11Buffer* mScreenQuadVB;
 	ID3D11Buffer* mScreenQuadIB;
+#endif
 
-	static const int SMapSize = 1024;
-
+	
 #ifdef _USE_DEFERRED_SHADING_
 	gBuffers* m_GBuffers;
 #endif
@@ -71,19 +77,14 @@ public:
 
 
 private:
-	void UpdateInstancedModelsData();
-	void DrawModelsToShadowMap();
-	void DrawModelsToSsaoMap();
 	void Init();
 	void InitPhysics();
 	void InitCharacter();
 	void InitTerrainResources();
 	void InitAllModels();
 	void InitFont();
-	void ComputeAABB();
-	void DrawModels(bool ComputeSSAO);
-	void DrawInstancedModels();
-	void DrawInstancedModelsToShadowMap();
+	
+
 	void BuildShadowTransform();
 	void RestoreRenderTarget();
 
@@ -107,7 +108,8 @@ public:
 	Direct3D(); 
 	~Direct3D();
 
-	ID3D11ShaderResourceView* GetShadowMap() { return m_Smap->DepthMapSRV(); }
+	ID3D11ShaderResourceView* GetShadowMap() { return SponzaScene->GetShadowMap(); }
+	SceneManagement::Scene* GetScene() { return SponzaScene; }
 
 	bool FogEnabled()const { return m_fogEnabled; }
 
@@ -120,7 +122,6 @@ public:
 	XNA::FrustumIntersection IntersectAABBFrustum(XNA::AxisAlignedBox* box, CXMMATRIX world);
 	XNA::FrustumIntersection IntersectSphereFrustum(XNA::Sphere* box, CXMMATRIX world);
 
-	AxisAlignedBox MergeAABBs(AxisAlignedBox& box0, AxisAlignedBox& box1);
 
 	void SetPauseStatus(bool Enabled);
 	void OnResize();

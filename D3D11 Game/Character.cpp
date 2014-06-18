@@ -10,7 +10,7 @@ Character::Character(WeaponManager* WeaponManager, btBroadphaseInterface* broadp
 
 	btTransform startTransform;
 	startTransform.setIdentity();
-	startTransform.setOrigin(btVector3(0, 1.0f, 0));
+	startTransform.setOrigin(btVector3(0, 100.0f, 0));
 
 	mGhostObject = new btPairCachingGhostObject();
 	mGhostObject->setWorldTransform(startTransform);
@@ -48,6 +48,9 @@ void Character::Draw()
 {
 	//we only need to show a gun in FPS games
 	//can add extra things here such as bullets fired
+	//Gun has a separate function for drawing because we're going to clear z-buffer and then draw to prevent
+	//intersection of weapons
+	
 }
 
 void Character::Update(float dt)

@@ -14,13 +14,17 @@
 SkinnedModel::SkinnedModel(const std::string& modelpath, InitInfo& info, bool Use32BitIndexFormat, bool FillIndices)
 {
 	mInfo = info;
+
+#if defined(DEBUG) || defined(_DEBUG)
+	mDrawCalls = 0;
+#endif
 	
 	Indices = nullptr;
 	
 	Lights[0].Ambient  = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
 	Lights[0].Diffuse  = XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f);
 	Lights[0].Specular = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
-	Lights[0].Direction = XMFLOAT3(-1.0f, -1.0f, 0.0f);
+	Lights[0].Direction = XMFLOAT3(0.0f, -1.0f, 0.0f);
 
 	XMFLOAT3 pos[3];
 
@@ -344,6 +348,10 @@ void SkinnedModel::LoadSkinnedModel(const std::string& path, bool& Use32BitForma
 
 void SkinnedModel::Render(CXMMATRIX ViewProj)
 {
+#if defined(DEBUG) || defined(_DEBUG)
+	mDrawCalls = 0;
+#endif
+
 	//responsibilty of user to pass correct status
 	//SkinnedModel class does not handle frustum culling
 	if (mModelVisibleStatus == OUTSIDE)
@@ -358,13 +366,13 @@ void SkinnedModel::Render(CXMMATRIX ViewProj)
 	XMMATRIX worldInvTranspose = MathHelper::InverseTranspose(W);
 	XMMATRIX WorldViewProj = W * ViewProj;
 	XMMATRIX TexTransform = XMMatrixIdentity();
-	XMMATRIX ShadowTransform = W * XMLoadFloat4x4(&d3d->m_ShadowTransform);
+	XMMATRIX ShadowTransform = XMLoadFloat4x4(&mShadowTransform);
 
 
 	Effects::NormalMapFX->SetEyePosW(d3d->m_Cam.GetPosition());
 	Effects::NormalMapFX->SetDirLights(Lights);
 	Effects::NormalMapFX->SetPointLights(PointLights);
-	Effects::NormalMapFX->SetShadowMap(d3d->GetShadowMap());
+	Effects::NormalMapFX->SetShadowMap(mShadowMap);
 	
 	Effects::NormalMapFX->SetWorld(W);
 	Effects::NormalMapFX->SetWorldInvTranspose(worldInvTranspose);
@@ -385,6 +393,10 @@ void SkinnedModel::Render(CXMMATRIX ViewProj)
 
 			if (DiffuseMapSRV[i] == nullptr)
 				continue;
+
+#if defined(DEBUG) || defined(_DEBUG)
+			++mDrawCalls;
+#endif
 
 		    Effects::NormalMapFX->SetMaterial(Materials[i]);
 			Effects::NormalMapFX->SetDiffuseMap(DiffuseMapSRV[i]);
@@ -472,6 +484,11 @@ INT SkinnedModel::Pick(int sx, int sy, XNA::AxisAlignedBox& box)
 	return PickedTriangle;
 }
 
+void SkinnedModel::SetShadowTransform(CXMMATRIX Transform)
+{
+	XMStoreFloat4x4(&mShadowTransform, Transform);
+}
+
 void SkinnedModel::SetModelVisibleStatus(XNA::FrustumIntersection status)
 {
 	mModelVisibleStatus = status;
@@ -481,3 +498,20 @@ void SkinnedModel::SetWorld(CXMMATRIX World)
 {
 	XMStoreFloat4x4(&mWorld, World);
 }
+
+void SkinnedModel::SetShadowMap(ID3D11ShaderResourceView* srv)
+{
+	if (srv == nullptr)
+		return;
+
+	mShadowMap = srv;
+}
+
+#if defined(DEBUG) || defined(_DEBUG)
+
+UINT SkinnedModel::GetNumDrawCalls()
+{
+	return mDrawCalls;
+}
+
+#endif

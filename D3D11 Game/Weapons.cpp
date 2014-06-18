@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 Weapon* Weapons::AK47 = 0;
+
 WeaponManager Weapons::WeaponManager;
 
 void Weapons::InitAll()
@@ -13,5 +14,6 @@ void Weapons::InitAll()
 
 void Weapons::DestroyAll()
 {
-	//release if needed
+	//release anything else if needed
+	//weapons are deleted/released by weapon manager when program exits
 }

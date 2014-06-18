@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-const float NumFrames = 45.0f;
+const float NumFrames = 40.0f;
 
 void TransformMatrix(mat4& out,const aiMatrix4x4& in){// there is some type of alignment issue with my mat4 and the aimatrix4x4 class, so the copy must be manually
 	out._11=in.a1;
@@ -298,9 +298,11 @@ void SceneAnimator::Init(const aiScene* pScene){// this will build the skeleton 
 		}
 	}
 	
+#if defined(DEBUG) || defined(_DEBUG)
 	char t[100];
 	sprintf_s(t, "Finished loading animation with %d bones", Bones.size());
 	MessageBoxA(0, t, 0, 0);
+#endif
 }
 void SceneAnimator::Save(std::ofstream& file){
 	// first recursivly save the skeleton

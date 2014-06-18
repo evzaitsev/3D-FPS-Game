@@ -101,12 +101,12 @@
     <ClInclude Include="gBuffers.h" />
     <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="Grass.h" />
-    <ClInclude Include="Map.h" />
     <ClInclude Include="Lighting.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="RenderStates.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="SceneManagement.h" />
     <ClInclude Include="ShadowMap.h" />
     <ClInclude Include="SkinnedModel.h" />
     <ClInclude Include="Sky.h" />
@@ -139,10 +139,10 @@
     <ClCompile Include="gBuffers.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="Grass.cpp" />
-    <ClCompile Include="Map.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="RenderStates.cpp" />
+    <ClCompile Include="SceneManagement.cpp" />
     <ClCompile Include="ShadowMap.cpp" />
     <ClCompile Include="SkinnedModel.cpp" />
     <ClCompile Include="Sky.cpp" />

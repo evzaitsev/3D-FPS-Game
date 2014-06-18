@@ -5,7 +5,7 @@
 #ifndef D3DUTIL_H
 #define D3DUTIL_H
 
-
+#define DEBUG
 
 #if defined(DEBUG) || defined(_DEBUG)
 #define _CRTDBG_MAP_ALLOC

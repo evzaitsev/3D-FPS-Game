@@ -71,7 +71,6 @@
 #include "SkinnedModel.h"
 #include "trees.h"
 #include "Grass.h"
-#include "Map.h"
 #include "gBuffers.h"
 #include "WeaponManger.h"
 #include "Weapon.h"
@@ -82,4 +81,5 @@
 #include "btBulletDynamicsCommon.h"
 #include "Character.h"
 #include "Weapons.h"
+#include "SceneManagement.h"
 #include "Direct3D.h"

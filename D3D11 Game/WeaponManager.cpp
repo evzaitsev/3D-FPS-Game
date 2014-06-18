@@ -33,7 +33,7 @@ Weapon* WeaponManager::GetSecondaryWeapon(UINT ArrayIndex)
 	if (ArrayIndex >= mSecondaryWeapons.size()) //invalid input
 		return nullptr;
 
-	return mWeapons[ArrayIndex];
+	return mSecondaryWeapons[ArrayIndex];
 }
 
 

@@ -196,24 +196,31 @@ public:
 	void RenderDeferred(CXMMATRIX World, CXMMATRIX ViewProj);
 #endif
 
-	void RenderShadowMap(CXMMATRIX World, CXMMATRIX ViewProj);
+	//set static to true if you plan to only render once to shadow map
+	//Using static bool as true prevents frustum culling
+	void RenderShadowMap(CXMMATRIX World, CXMMATRIX ViewProj, bool Static);
 	void RenderInstancedShadowMap(CXMMATRIX World, CXMMATRIX ViewProj);
 
 #ifdef USE_SSAO
 	void RenderNormalDepthMap(CXMMATRIX World, CXMMATRIX ViewProj);
 #endif
 
+#if defined(DEBUG) || (_DEBUG)
 	UINT GetNumDrawCalls();
+#endif
 
 	//used for instancing
 	void UpdateInstanceData(XNA::AxisAlignedBox& box);
 	void BuildInstanceData();
 
 	void Update(CXMMATRIX World);
-
 	void SetModelVisibleStatus(INT &status);
 
-	void SetDirLight(DirectionalLight DirLight[3]);
+	void SetDirLights(DirectionalLight* DirLight);
+	void SetPointLights(PointLight* light);
+
+	void SetShadowMap(ID3D11ShaderResourceView* srv);
+	void SetShadowTransform(CXMMATRIX Transform);
 
 	//returns picked triangle
 	//-1 means nothing got picked
@@ -240,11 +247,6 @@ private:
 	void RenderInstanced(CXMMATRIX World, CXMMATRIX ViewProj, bool& AOMap, bool& SpecularMap);
 	void RenderInstancedNormalMapped(CXMMATRIX World, CXMMATRIX ViewProj, bool& AOMap, bool& SpecularMap);
 
-	void RenderSubset(UINT ID, UINT pass,
-		CXMMATRIX World, CXMMATRIX WorldViewProj, 
-		CXMMATRIX WorldInvTranspose, CXMMATRIX ShadowTransform, 
-		CXMMATRIX TexTransform);
-
 	ID3DX11EffectTechnique* GetTechnique();
 
 private:
@@ -254,8 +256,10 @@ private:
 	//for instancing
 	UINT mVisibleObjectCount;
 
+#if defined(DEBUG) || defined(_DEBUG)
 	//keep track of number of draw calls
 	UINT mDrawCalls;
+#endif
 
 	// 0 = fully outside frustum
 	// 1 = intersect
@@ -273,15 +277,81 @@ private:
 	std::vector<ID3D11ShaderResourceView*> AOMapSRV;
 	std::vector<ID3D11ShaderResourceView*> SpecMapSRV;
 
+	ID3D11ShaderResourceView* mShadowMap;
+
+	XMFLOAT4X4 mShadowTransform;
 
 	std::vector<Material> Materials;
 	std::vector<bool> ModelVisibleList;
 	
-
 	ModelData mModel;
 	InitInfo mInfo;
  
 	ID3D11Buffer* mInstancedBuffer;
+	
+};
+
+
+struct ModelInstance
+{
+	ModelInstance()
+	{
+		Model = nullptr;
+
+		ComputeSSAO = false;
+		UseInstancing = false;
+		CastShadows = true;
+		Visible = true; 
+
+		XMMATRIX world = XMMatrixIdentity();
+		XMStoreFloat4x4(&World, world);
+	}
+
+	XMMATRIX GetWorldXM()const
+	{
+		return XMLoadFloat4x4(&World);
+	}
+
+	void StoreWorld(CXMMATRIX W)
+	{
+		XMStoreFloat4x4(&World, W);
+	}
+
+	void push_backWorld(CXMMATRIX W)
+	{
+		InstancedData data;
+		XMStoreFloat4x4(&data.World, W);
+
+		Model->mInstancedData.push_back(data);
+	}
+
+	void BuildInstanceData()
+	{
+		Model->BuildInstanceData();
+	}
+
+	void UpdateInstanceData()
+	{
+		Model->UpdateInstanceData(box);
+	}
+		
+	void RenderInstanced(CXMMATRIX ViewProj)
+	{
+		Model->RenderInstanced(GetWorldXM(), ViewProj);
+	}
+
+
+	XNA::AxisAlignedBox box;
+	XNA::Sphere sphere;
+
+	XMFLOAT4X4 World;
+
+	Model* Model;
+
+	bool Visible;
+	bool UseInstancing;
+	bool ComputeSSAO;
+	bool CastShadows;
 };
 
 #endif

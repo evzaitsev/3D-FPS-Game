@@ -29,8 +29,10 @@ Direct3D::Direct3D()
 	m_AppPaused = false;
 	m_RenderTargetView = nullptr;
 	m_DepthStencilView = nullptr;
+#if defined(DEBUG) || defined(_DEBUG)
 	mScreenQuadIB = nullptr;
 	mScreenQuadVB = nullptr;
+#endif
 	m_DepthStencilBuffer = nullptr;
 	m_Maximize = false;
 	m_Minimize = false;
@@ -52,8 +54,10 @@ Direct3D::Direct3D(int Width, int Height, bool FullScreen, bool Multisample)
 	m_AppPaused = false;
 	m_RenderTargetView = nullptr;
 	m_DepthStencilView = nullptr;
+#if defined(DEBUG) || defined(_DEBUG)
 	mScreenQuadIB = nullptr;
 	mScreenQuadVB = nullptr;
+#endif
 	m_DepthStencilBuffer = nullptr;
 	m_Sky = nullptr;
 	m_Smap = nullptr;
@@ -80,8 +84,10 @@ Direct3D::Direct3D(int Width, int Height)
 	m_RenderTargetView = nullptr;
 	m_DepthStencilView = nullptr;
 	m_DepthStencilBuffer = nullptr;
+#if defined(DEBUG) || defined(_DEBUG)
 	mScreenQuadIB = nullptr;
 	mScreenQuadVB = nullptr;
+#endif
 	m_Character = nullptr;
 	m_Sky = nullptr;
 	m_Smap = nullptr;
@@ -109,12 +115,16 @@ Direct3D::~Direct3D()
 	ReleaseCOM(m_SwapChain);
 	ReleaseCOM(m_DepthStencilBuffer);
 
+#if defined(DEBUG) || defined(_DEBUG)
 	ReleaseCOM(mScreenQuadIB);
 	ReleaseCOM(mScreenQuadVB);
+#endif
 
 	SafeDelete(m_Sky);
-	SafeDelete(m_Smap);
+	//SafeDelete(m_Smap);
 	SafeDelete(m_Character);
+	SafeDelete(SponzaScene);
+	SafeDelete(m_Tiny);
 
 #ifdef _USE_DEFERRED_SHADING_
 	SafeDelete(m_GBuffers);
@@ -129,7 +139,6 @@ Direct3D::~Direct3D()
 
     delete m_groundRigidBody->getMotionState();
 
-	
 
 	SafeDelete(m_groundRigidBody);
 	SafeDelete(m_groundShape);
@@ -170,7 +179,7 @@ void Direct3D::InitPhysics()
 		  3 * sizeof(int),
 		  m_Sponza->vertices.size(), (btScalar*) &m_Sponza->vertices[0].x, sizeof(XMFLOAT3));
 
-	  m_groundShape =  new btBvhTriangleMeshShape(m_indexVertexArrays, true, true);//new btStaticPlaneShape(btVector3(0, 1, 0), 1);
+	  m_groundShape =  new btBvhTriangleMeshShape(m_indexVertexArrays, true, true);
 
 
       m_groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, -1, 0)));
@@ -203,6 +212,7 @@ void Direct3D::InitAllModels()
 	mDirLights[2].Direction = XMFLOAT3(-0.57735f, -0.57735f, -0.57735f);
 
 	ModelInstance m_SponzaInstance;
+	SkinnedModelInstance m_TinyInstance;
 
 	
 	Material DefaultMat;
@@ -212,7 +222,6 @@ void Direct3D::InitAllModels()
 	DefaultMat.Specular = XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f);
 
 	Model::InitInfo info;
-	SkinnedModel::InitInfo SkinnedInfo;
 
 	info.Material = DefaultMat;
 	info.Mgr = &m_TextureMgr;
@@ -223,12 +232,7 @@ void Direct3D::InitAllModels()
 	info.InstanceFrustumCulling = true;
 	info.UseNormalsFromModel = true;
 	info.Scale = XMFLOAT3(0.1f, 0.1f, 0.1f);
-	info.technique = Effects::NormalMapFX->Light1PointLight1TexAOSpecTech;
-
-	SkinnedInfo.Mgr = &m_TextureMgr;
-	SkinnedInfo.Material = DefaultMat;
-	SkinnedInfo.UseDefaultMaterial = false;
-	SkinnedInfo.Scale = XMFLOAT3(0.01f, 0.01f, 0.01f);
+	info.technique = Effects::NormalMapFX->Light1PointLight0TexAOSpecTech;
 
 
 	//using only diffuse map will save the memory but will affect the
@@ -240,14 +244,29 @@ void Direct3D::InitAllModels()
 
 	m_SponzaInstance.UseInstancing = false;
 	m_SponzaInstance.ComputeSSAO = false;
+	m_SponzaInstance.CastShadows = true;
 	m_SponzaInstance.Model = m_Sponza;
 
+	SkinnedModel::InitInfo SkinnedInfo;
 
-	ModelInstances.push_back(m_SponzaInstance);
+	SkinnedInfo.Mgr = &m_TextureMgr;
+	SkinnedInfo.Material = DefaultMat;
+	SkinnedInfo.Scale = XMFLOAT3(0.01f, 0.01f, 0.01f);
+	SkinnedInfo.UseDefaultMaterial = false;
 
+	m_Tiny = new SkinnedModel("Resources\\Models\\tiny.x", SkinnedInfo, false, false);
 
-	ComputeAABB();
+	m_TinyInstance.SetWorld(XMMatrixScaling(0.01f, 0.01f, 0.01f));
+	m_TinyInstance.Clip = "Walk";
+	m_TinyInstance.SkinnedModel = m_Tiny;
+	
+	for (int i = 0; i < 5; ++i)
+		m_TinyInstance.DoubleSpeed();
 
+	SponzaScene->AddStaticModel(m_SponzaInstance);
+	SponzaScene->AddSkinnedModel(m_TinyInstance);
+
+	SponzaScene->ComputeAABBAndSphereForAllModels();
 }
 
 void Direct3D::InitCharacter()
@@ -258,92 +277,6 @@ void Direct3D::InitCharacter()
 	m_Character = new Character(&Weapons::WeaponManager, m_broadphase, m_dynamicsWorld);
 
 	m_Character->SetPrimaryWeaponModel("AK47");
-}
-
-XNA::AxisAlignedBox Direct3D::MergeAABBs(
-	                                     XNA::AxisAlignedBox& box0, 
-										 XNA::AxisAlignedBox& box1)
-{
-    XMVECTOR CenterA = XMLoadFloat3( &box0.Center );
-    XMVECTOR ExtentsA = XMLoadFloat3( &box0.Extents );
-
-    XMVECTOR CenterB = XMLoadFloat3( &box1.Center );
-    XMVECTOR ExtentsB = XMLoadFloat3( &box1.Extents );
-
-    XMVECTOR MinA = CenterA - ExtentsA;
-    XMVECTOR MaxA = CenterA + ExtentsA;
-
-    XMVECTOR MinB = CenterB - ExtentsB;
-    XMVECTOR MaxB = CenterB + ExtentsB;
-
-	XMVECTOR vMin;
-	XMVECTOR vMax; 
-
-	vMin = XMVectorMin(MinA, MinB);
-	vMax = XMVectorMax(MaxA, MaxB);
-
-	XNA::AxisAlignedBox Out;
-
-	XMStoreFloat3(&Out.Center, 0.5f * (vMin + vMax));
-	XMStoreFloat3(&Out.Center, 0.5f * (vMax - vMin));
-
-	return Out;
-}
-
-
-
-
-void Direct3D::ComputeAABB()
-{
-	for (USHORT j = 0; j < ModelInstances.size(); ++j)
-	{
-
-		XMFLOAT3 vMinf3(+MathHelper::Infinity, +MathHelper::Infinity, +MathHelper::Infinity);
-	    XMFLOAT3 vMaxf3(-MathHelper::Infinity, -MathHelper::Infinity, -MathHelper::Infinity);
-	
-	    XMVECTOR vMin = XMLoadFloat3(&vMinf3);
-	    XMVECTOR vMax = XMLoadFloat3(&vMaxf3);
-
-		for (UINT i = 0; i < ModelInstances[j].Model->vertices.size(); ++i)
-		{
-			XMVECTOR P = XMLoadFloat3(&ModelInstances[j].Model->vertices[i]);
-			
-		    vMin = XMVectorMin(vMin, P);
-		    vMax = XMVectorMax(vMax, P);
-
-		}
-
-		XMStoreFloat3(&ModelInstances[j].box.Center, 0.5f * (vMin + vMax)); 
-		XMStoreFloat3(&ModelInstances[j].box.Extents, 0.5f * (vMax - vMin)); 
-
-		XNA::ComputeBoundingSphereFromPoints(&ModelInstances[j].sphere, ModelInstances[j].Model->vertices.size(),
-			&ModelInstances[j].Model->vertices[0], sizeof(XMFLOAT3));
-
-		if (ModelInstances[j].UseInstancing)
-		    ModelInstances[j].BuildInstanceData();
-	} 
-
-	for (USHORT j = 0; j < SkinnedModelInstances.size(); ++j)
-	{
-		XMFLOAT3 vMinf3(+MathHelper::Infinity, +MathHelper::Infinity, +MathHelper::Infinity);
-	    XMFLOAT3 vMaxf3(-MathHelper::Infinity, -MathHelper::Infinity, -MathHelper::Infinity);
-	
-	    XMVECTOR vMin = XMLoadFloat3(&vMinf3);
-	    XMVECTOR vMax = XMLoadFloat3(&vMaxf3);
-
-		for (UINT i = 0; i < SkinnedModelInstances[j].SkinnedModel->vertices.size(); ++i)
-		{
-			XMVECTOR P = XMLoadFloat3(&SkinnedModelInstances[j].SkinnedModel->vertices[i]);
-			
-		    vMin = XMVectorMin(vMin, P);
-		    vMax = XMVectorMax(vMax, P);
-
-		}
-
-		XMStoreFloat3(&SkinnedModelInstances[j].box.Center, 0.5f * (vMin + vMax)); 
-		XMStoreFloat3(&SkinnedModelInstances[j].box.Extents, 0.5f * (vMax - vMin)); 
-
-	}
 }
 
 void Direct3D::Init()
@@ -455,25 +388,29 @@ void Direct3D::Init()
 	if (!m_fogEnabled)
 	m_Sky = new Sky(pDevice, L"Resources\\Textures\\sky.dds", 50000.0f);
 
-	m_Smap = new ShadowMap(pDevice, SMapSize, SMapSize);
 
 #ifdef _USE_DEFERRED_SHADING_
 	m_GBuffers = new gBuffers(pDevice, pDeviceContext, m_ViewPort, m_Width, m_Height);
 #endif
 
+
+	SponzaScene = new SceneManagement::Scene();
 	
 	InitAllModels();
 	InitPhysics();
 	InitCharacter();
 	InitFont();
 
-	XNA::Sphere s;
+	XNA::Sphere vol;
 
-   XNA::ComputeBoundingSphereFromPoints(&s, ModelInstances[0].Model->vertices.size(),
-		&ModelInstances[0].Model->vertices[0], sizeof(XMFLOAT3));
+	vol.Center = SponzaScene->GetSphere(0).Center;
+	vol.Radius = SponzaScene->GetSphere(0).Radius;
 
-   m_SceneBounds.Center = s.Center;
-   m_SceneBounds.Radius = s.Radius;
+	SponzaScene->SetShadowMapType(SceneManagement::STATIC_SHADOW_MAP);
+	SponzaScene->SetShadowVolume(vol);
+	SponzaScene->SetRenderTargetInfo(m_ViewPort, m_RenderTargetView, m_DepthStencilView);
+	SponzaScene->BuildShadowMapTransforms();
+
 
 	//m_Ssao = new Ssao(pDevice, pDeviceContext, m_Width, m_Height, m_Cam.GetFovY(), m_Cam.GetFarZ());
 
@@ -635,42 +572,22 @@ void Direct3D::UpdateScene(float dt)
 	}
 #endif
 
-
-	UpdateInstancedModelsData();
-
 	m_Cam.UpdateViewMatrix();
 
-    for (USHORT i = 0; i < ModelInstances.size(); ++i)
-	{
-		XMMATRIX& W = ModelInstances[i].GetWorldXM();
+	SponzaScene->Update(dt);
 
-		INT Intersect = IntersectSphereFrustum(&ModelInstances[i].sphere, W);
-	  
-		if (Intersect == INTERSECT)
-		{
-			Intersect = IntersectAABBFrustum(&ModelInstances[i].box, W);
-			ModelInstances[i].Model->SetModelVisibleStatus(Intersect);
-		}
-		else
-			ModelInstances[i].Model->SetModelVisibleStatus(Intersect);
-	   
-		ModelInstances[i].Model->Update(W);
-	}
+	static float x = 0.0f, y = 0.0f, z = 0.0f;
 
-	for (USHORT i = 0; i < SkinnedModelInstances.size(); ++i)
-	{
-		if (SkinnedModelInstances[i].SkinnedModel == 0)
-			continue;
+	if (GetAsyncKeyState('G')&1)
+		++x;
+	if (GetAsyncKeyState('T')&1)
+		++y;
+	if (GetAsyncKeyState('Y')&1)
+		++z;
 
-		XMMATRIX& W = SkinnedModelInstances[i].GetWorldXM();
+	XMMATRIX TinyWorld = XMMatrixScaling(0.01f, 0.01f, 0.01f) * XMMatrixTranslation(x, y, z);
 
-		XNA::FrustumIntersection ModelVisibleStatus = IntersectAABBFrustum(&SkinnedModelInstances[i].box, W);
-
-		SkinnedModelInstances[i].SkinnedModel->SetWorld(W);
-		SkinnedModelInstances[i].SkinnedModel->SetModelVisibleStatus(ModelVisibleStatus);
-		SkinnedModelInstances[i].Update(dt);
-	}
-
+	SponzaScene->UpdateSkinnedModelWorldMatrix(TinyWorld, 0);
 
 	m_Character->Update(dt);
 
@@ -685,188 +602,10 @@ void Direct3D::UpdateScene(float dt)
 	//m_Cam.SetPosition(pos.x, y, pos.z);
 }
 
-void Direct3D::UpdateInstancedModelsData()
-{
-	static bool ExecuteLoop = true;
-
-	for (USHORT i = 0; i < ModelInstances.size(); ++i)
-	{
-		if (ModelInstances[i].Model == 0)
-			continue;
-
-		if (ModelInstances[i].UseInstancing)
-			ModelInstances[i].UpdateInstanceData();
-	}
-}
-
-
-void Direct3D::DrawInstancedModels()
-{
-	XMMATRIX ViewProj = m_Cam.ViewProj();
-
-	for (USHORT i = 0; i < ModelInstances.size(); ++i)
-	{
-		if (ModelInstances[i].Model == 0)
-			continue;
-
-		if (ModelInstances[i].UseInstancing)
-			ModelInstances[i].RenderInstanced(ViewProj);
-	}
-
-}
-
-void Direct3D::DrawInstancedModelsToShadowMap()
-{
-	XMMATRIX view = XMLoadFloat4x4(&d3d->m_LightView);
-	XMMATRIX proj = XMLoadFloat4x4(&d3d->m_LightProj);
-    XMMATRIX viewProj = XMMatrixMultiply(view, proj);
-
-	for (USHORT i = 0; i < ModelInstances.size(); ++i)
-	{
-		if (ModelInstances[i].Model == 0)
-			continue;
-
-		if (ModelInstances[i].UseInstancing)
-			ModelInstances[i].Model->RenderInstancedShadowMap(ModelInstances[i].GetWorldXM(), viewProj);
-	}  
-
-}
-
-
-void Direct3D::DrawModelsToShadowMap()
-{
-	XMMATRIX view = XMLoadFloat4x4(&d3d->m_LightView);
-	XMMATRIX proj = XMLoadFloat4x4(&d3d->m_LightProj);
-    XMMATRIX viewProj = XMMatrixMultiply(view, proj);
-
-
-	for (USHORT i = 0; i < ModelInstances.size(); ++i)
-	{
-		if (ModelInstances[i].Model == 0)
-			continue;
-
-		if (ModelInstances[i].UseInstancing)
-			continue;
-
-		XMMATRIX& W = ModelInstances[i].GetWorldXM();
-
-		ModelInstances[i].Model->RenderShadowMap(W, viewProj);
-		
-	}  
-
-}
-
-#ifdef USE_SSAO
-
-void Direct3D::DrawModelsToSsaoMap()
-{
-	XMMATRIX ViewProj = m_Cam.ViewProj();
-
-	for (USHORT i = 0; i < ModelInstances.size(); ++i)
-	{
-		if (!ModelInstances[i].ComputeSSAO) 
-			continue;
-
-		if (ModelInstances[i].Model == 0)
-			continue;
-
-		if (ModelInstances[i].UseInstancing)
-			continue; 
-
-		if (ModelInstances[i].Visible)
-			ModelInstances[i].Model->RenderNormalDepthMap(ModelInstances[i].GetWorldXM(), ViewProj);
-
-	}
-
-
-}
-
-#endif
-
-void Direct3D::DrawModels(bool ComputeSSAO)
-{
-	XMMATRIX ViewProj = m_Cam.ViewProj();
-
-	for (USHORT i = 0; i < ModelInstances.size(); ++i)
-	{
-		if (ModelInstances[i].Model == 0)
-			continue;
-
-		if (ModelInstances[i].UseInstancing)
-			continue; 
-
-#ifdef USE_SSAO
-		if (ModelInstances[i].ComputeSSAO)
-		    ModelInstances[i].Model->EnableSSAO(ComputeSSAO);
-		else
-			ModelInstances[i].Model->EnableSSAO(false); 
-#endif
-
-		XMMATRIX& W = ModelInstances[i].GetWorldXM();
-
-		ModelInstances[i].Model->Render(W, ViewProj);
-	}
-
-	for (USHORT i = 0; i < SkinnedModelInstances.size(); ++i)
-	{
-		if (SkinnedModelInstances[i].SkinnedModel == 0)
-			continue;
-
-		SkinnedModelInstances[i].SkinnedModel->Render(ViewProj);
-	}
-}
 
 void Direct3D::RenderToShadowMap()
 {
-	m_Smap->BindDsvAndSetNullRenderTarget(pDeviceContext);
-
-	DrawInstancedModelsToShadowMap();
-
-	DrawModelsToShadowMap();
-
-	pDeviceContext->RSSetState(0);
-
-	bool ComputeSSAOThisFrame = false;
-
-/*	for (USHORT i = 0; i < ModelInstances.size(); ++i) 
-	{
-		if (ModelInstances[i].ComputeSSAO) 
-		{
-			if (ModelInstances[i].Visible) 
-			{
-				XMVECTOR campos = m_Cam.GetPositionXM();
-
-				XMVECTOR modelpos = XMLoadFloat3(&XMFLOAT3(ModelInstances[i].World._41, 
-					ModelInstances[i].World._42, ModelInstances[i].World._43));
-
-				XMVECTOR dist = modelpos - campos;
-				float distf;
-
-				XMStoreFloat(&distf, XMVector3LengthSq(dist));
-				
-				if (!(distf > 10000)) //sqrt(10000) = 100
-				{
-					ComputeSSAOThisFrame = true;
-					break;
-				}
-			}
-		}
-	} 
-
-	pDeviceContext->ClearDepthStencilView(m_DepthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
-	pDeviceContext->RSSetViewports(1, &m_ViewPort);
-	m_Ssao->SetNormalDepthRenderTarget(m_DepthStencilView);
-
-	DrawModelsToSsaoMap();
-
-	if (ComputeSSAOThisFrame)
-	{
-	   // Now compute the ambient occlusion.
-	    m_Ssao->ComputeSsao(m_Cam);
-	    m_Ssao->BlurAmbientMap(2);
-	} */
-
-	RestoreRenderTarget();
+	SponzaScene->DrawShadows();
 }
 
 #ifdef _USE_DEFERRED_SHADING_
@@ -909,13 +648,9 @@ void Direct3D::Do2DPostProcessingOnScene()
 
 void Direct3D::DrawScene()
 {
-	static bool Once = false;
 
-	if (!Once)
-	{
-		RenderToShadowMap();
-		Once = true;
-	}
+	RenderToShadowMap();
+
 
 #ifdef _USE_DEFERRED_SHADING_
 	m_GBuffers->SetRenderTargetView(m_DepthStencilView);
@@ -926,16 +661,15 @@ void Direct3D::DrawScene()
 	RestoreRenderTarget();
 #endif
 
-
 	pDeviceContext->ClearRenderTargetView(m_RenderTargetView, reinterpret_cast<const float*>(&Colors::Silver));
 	pDeviceContext->ClearDepthStencilView(m_DepthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
 
+#if defined(DEBUG) || defined(_DEBUG)
 	if (GetAsyncKeyState('1') & 0x8000)
 		pDeviceContext->RSSetState(RenderStates::WireframeRS);
+#endif
 
-	DrawInstancedModels();
-
-	DrawModels(false);
+	SponzaScene->DrawScene();
 
 	m_Character->Draw();
 
@@ -953,8 +687,12 @@ void Direct3D::DrawScene()
 	pDeviceContext->RSSetState(0);
 	pDeviceContext->OMSetDepthStencilState(0, 0);
 	
+#if defined(DEBUG) || defined(_DEBUG)
 	wchar_t s[100];
-	wsprintf(s, L"DrawCalls:%d", ModelInstances[0].Model->GetNumDrawCalls());
+
+	UINT TotalDrawCalls = SponzaScene->GetNumDrawCalls();
+
+	wsprintf(s, L"DrawCalls:%d", TotalDrawCalls);
 	
 	POINT pos;
 	pos.x = 20;
@@ -962,7 +700,6 @@ void Direct3D::DrawScene()
 
 	d3d->DrawString(pos, s);
 
-#if defined(DEBUG) || defined(_DEBUG)
 	if (GetAsyncKeyState('Z'))
 	{
 		DrawScreenQuad();

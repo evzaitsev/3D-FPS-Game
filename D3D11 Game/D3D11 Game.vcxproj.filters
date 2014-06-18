@@ -99,9 +99,6 @@
     <ClInclude Include="Ssao.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Map.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="FontSheet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -127,6 +124,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="WeaponManger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneManagement.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -197,9 +197,6 @@
     <ClCompile Include="Ssao.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Map.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="FontSheet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -225,6 +222,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="WeaponManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneManagement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

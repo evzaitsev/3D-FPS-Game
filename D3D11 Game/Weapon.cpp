@@ -127,9 +127,10 @@ void Weapon::Render()
 	XMMATRIX Scaling = XMMatrixScaling(0.085f, 0.085f, 0.085f);
 
 	XMMATRIX WeaponWorld =  Scaling * Rotation * Translation * CameraWorld;
+	XMMATRIX ShadowTransform = WeaponWorld * d3d->GetScene()->GetShadowTransform();
 
-
-
+	WeaponModel->SetShadowMap(d3d->GetShadowMap());
+	WeaponModel->SetShadowTransform(ShadowTransform);
 	WeaponModel->SetWorld(WeaponWorld);
 	WeaponModel->Render(ViewProj);
 
@@ -181,3 +182,4 @@ const std::string& Weapon::GetWeaponName()
 {
 	return WeaponName;
 }
+

@@ -21,9 +21,9 @@ cbuffer cbSkinned
 	float4x4 gBoneTransforms[96];
 };
 
-cbuffer cbFixed
+cbuffer cbConstants
 {
-	static const int NUM_INFLUENCE_PER_VERTEX = 4;
+	static const unsigned int NUM_INFLUENCE_PER_VERTEX = 4;
 };
 
 cbuffer cbPerObject
