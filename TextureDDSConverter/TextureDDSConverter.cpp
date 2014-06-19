@@ -11,11 +11,6 @@
 
 using namespace std;
 
-std::string removeExtension(std::string filename) {
-    size_t lastdot = filename.find_last_of(".");
-    if (lastdot == std::string::npos) return filename;
-    return filename.substr(0, lastdot); 
-}
 
 int _tmain(int argc, _TCHAR* argv[])
 {
